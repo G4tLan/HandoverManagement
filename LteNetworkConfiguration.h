@@ -14,6 +14,8 @@
 #include "ns3/internet-module.h"
 #include "ns3/point-to-point-module.h"
 #include "ns3/core-module.h"
+#include "ns3/applications-module.h"
+#include "ns3/config-store-module.h"
 
 namespace ns3 {
 class LteNetworkConfiguration {
@@ -35,6 +37,7 @@ public:
 	Ptr<Node> getRemoteHost(){return remoteHost;}
 	void connectUeToNearestEnb(NetDeviceContainer*,NetDeviceContainer*);
 	void installIpStackUe(NodeContainer*, NetDeviceContainer*);
+	void startApps(NodeContainer*, NetDeviceContainer*);
 private:
 	Ptr<LteHelper> lteHelper;
 	Ptr<PointToPointEpcHelper> epcHelper;
@@ -54,6 +57,8 @@ private:
 };
 
 LteNetworkConfiguration::LteNetworkConfiguration() {
+	Config::SetDefault ("ns3::UdpClient::Interval", TimeValue (MilliSeconds (10)));
+	Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (false));
 	//must follow this order
 	setUpEpc();
 	setUpLteHelperWithEpc();
@@ -73,6 +78,11 @@ LteNetworkConfiguration::LteNetworkConfiguration() {
 void LteNetworkConfiguration::setUpLteHelperWithEpc() {
 	lteHelper = CreateObject<LteHelper>();
 	lteHelper->SetEpcHelper(epcHelper);
+	lteHelper->SetHandoverAlgorithmType ("ns3::A2A4RsrqHandoverAlgorithm");
+	lteHelper->SetHandoverAlgorithmAttribute ("ServingCellThreshold",
+			UintegerValue (30));
+	lteHelper->SetHandoverAlgorithmAttribute ("NeighbourCellOffset",
+			UintegerValue (1));
 }
 
 void LteNetworkConfiguration::setUpEpc() {
@@ -131,11 +141,75 @@ void LteNetworkConfiguration::connectUeToNearestEnb(NetDeviceContainer* Ues,NetD
 }
 
 void LteNetworkConfiguration::installIpStackUe(NodeContainer* Ues, NetDeviceContainer* ueLteDevs){
-	 internet.Install (*Ues);
-	 ueIpIfaces = epcHelper->AssignUeIpv4Address (*ueLteDevs);
+	internet.Install (*Ues);
+	ueIpIfaces = epcHelper->AssignUeIpv4Address (*ueLteDevs);
 
-	 Ues = NULL;
-	 ueLteDevs = NULL;
+	Ues = NULL;
+	ueLteDevs = NULL;
+}
+
+void LteNetworkConfiguration::startApps(NodeContainer* ueNodes, NetDeviceContainer* ueLteDevs){
+
+	// Install and start applications on UEs and remote host
+	uint16_t dlPort = 10000;
+	uint16_t ulPort = 20000;
+
+	// randomize a bit start times to avoid simulation artifacts
+	// (e.g., buffer overflows due to packet transmissions happening
+	// exactly at the same time)
+	Ptr<UniformRandomVariable> startTimeSeconds = CreateObject<UniformRandomVariable> ();
+	startTimeSeconds->SetAttribute ("Min", DoubleValue (0));
+	startTimeSeconds->SetAttribute ("Max", DoubleValue (0.010));
+
+	uint32_t numberOfUes = ueNodes->GetN();
+
+	for (uint32_t u = 0; u < numberOfUes; ++u)
+	{
+		Ptr<Node> ue = ueNodes->Get (u);
+		// Set the default gateway for the UE
+		Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ue->GetObject<Ipv4> ());
+		ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
+
+		for (uint32_t b = 0; b < 1; ++b)
+		{
+			++dlPort;
+			++ulPort;
+
+			ApplicationContainer clientApps;
+			ApplicationContainer serverApps;
+
+			UdpClientHelper dlClientHelper (ueIpIfaces.GetAddress (u), dlPort);
+			clientApps.Add (dlClientHelper.Install (remoteHost));
+			PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory",
+					InetSocketAddress (Ipv4Address::GetAny (), dlPort));
+			serverApps.Add (dlPacketSinkHelper.Install (ue));
+
+			UdpClientHelper ulClientHelper (remoteHostAddr, ulPort);
+			clientApps.Add (ulClientHelper.Install (ue));
+			PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory",
+					InetSocketAddress (Ipv4Address::GetAny (), ulPort));
+			serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
+
+			Ptr<EpcTft> tft = Create<EpcTft> ();
+			EpcTft::PacketFilter dlpf;
+			dlpf.localPortStart = dlPort;
+			dlpf.localPortEnd = dlPort;
+			tft->Add (dlpf);
+			EpcTft::PacketFilter ulpf;
+			ulpf.remotePortStart = ulPort;
+			ulpf.remotePortEnd = ulPort;
+			tft->Add (ulpf);
+			EpsBearer bearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT);
+			lteHelper->ActivateDedicatedEpsBearer (ueLteDevs->Get (u), bearer, tft);
+
+			Time startTime = Seconds (startTimeSeconds->GetValue ());
+			serverApps.Start (startTime);
+			clientApps.Start (startTime);
+
+		} // end for b
+	}
+	ueNodes = NULL;
+	ueLteDevs = NULL;
 }
 }
 

@@ -4,6 +4,7 @@
 #include "Enbs.h"
 #include "LteNetworkConfiguration.h"
 #include "UE.h"
+#include "ns3/flow-monitor-module.h"
 
 using namespace ns3;
 
@@ -53,15 +54,23 @@ int main(int argc, char *argv[]) {
 
 	lteNetwork.installIpStackUe(ueContainer.getUes(), &ueLteDevs);
 	lteNetwork.connectUeToNearestEnb(&ueLteDevs, &enbLteDevs);
+	lteNetwork.startApps(ueContainer.getUes(), &ueLteDevs);
+
 
 	//Setup netAnim settings
-	AnimationInterface anim("./scratch/first.xml");
+	AnimationInterface anim("./scratch/Simulation.xml");
 	int UEImageId = anim.AddResource("./scratch/UE.png");
 	int ENBImageId = anim.AddResource("./scratch/ENB.png");
 	enbContainer.setNetAnimProperties(&anim, ENBImageId);
 	ueContainer.setNetAnimProperties(&anim, UEImageId);
 
+	//Measurements
+	Ptr<FlowMonitor> flowMonitor;
+	FlowMonitorHelper flowHelper;
+	flowMonitor = flowHelper.InstallAll();
+
 	Simulator::Stop(Seconds(10));
+	flowMonitor->SerializeToXmlFile("./scratch/Simulation-measurements.xml", true, true);
 	Simulator::Run();
 
 	Simulator::Destroy();
