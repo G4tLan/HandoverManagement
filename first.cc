@@ -19,9 +19,10 @@ NS_LOG_COMPONENT_DEFINE("LenaX2HandoverMeasures");
  */
 
 int main(int argc, char *argv[]) {
-	int numberOfEnbs = 5;
-	int numberOfUes = 10;
-	int distance = 50;
+	int numberOfEnbs = 2;
+	int numberOfUes = 6;
+	int distance = 500; //m
+	Enbs::Position_Types type = Enbs::STRAIGHT_LINE;
 
 	CommandLine cmd;
 	cmd.AddValue("nEnbs", "Number of Enbs", numberOfEnbs);
@@ -29,17 +30,19 @@ int main(int argc, char *argv[]) {
 	cmd.AddValue("distance", "distance between enbs", distance);
 	cmd.Parse(argc, argv);
 
-	Enbs enbContainer(numberOfEnbs, distance);
-	int xCenter = (enbContainer.GetNumOfEnbsInRow() + 1) * distance / 2;
-	int yCenter = (enbContainer.GetNumOfRows() - 1) * distance / 2;
-	int radius = yCenter;
-	if (xCenter > yCenter) {
-		radius = xCenter;
-	}
-	UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4);
-	double eNbTxPower = 30;
+	Enbs enbContainer(numberOfEnbs, distance, type);
+	//int xCenter = (enbContainer.GetNumOfEnbsInRow() + 1) * distance / 2;
+	//int yCenter = (enbContainer.GetNumOfRows() - 1) * distance / 2;
+	//int radius = yCenter;
+	//if (xCenter > yCenter) {
+		//radius = xCenter;
+	//}
+	//UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4); //random positions
+	UE ueContainer(numberOfUes, 20, 20); //different speeds
+
+	double eNbTxPower = 46; //dbm
 	Config::SetDefault("ns3::LteEnbPhy::TxPower", DoubleValue(eNbTxPower));
-	Config::SetDefault("ns3::LteUePhy::TxPower", DoubleValue(10.0));
+	//Config::SetDefault("ns3::LteUePhy::TxPower", DoubleValue(10.0));
 
 	//setup the network
 	LteNetworkConfiguration lteNetwork;
@@ -50,7 +53,7 @@ int main(int argc, char *argv[]) {
 	NetDeviceContainer ueLteDevs = lteNetwork.generateLteEnbDevices(
 			ueContainer.getUes(), LteNetworkConfiguration::DeviceTypes::UE);
 
-	enbContainer.ConnectClosestEnbX2Interface(lteHelper);
+	enbContainer.ConnectClosestEnbX2Interface(lteHelper, type);
 
 	lteNetwork.installIpStackUe(ueContainer.getUes(), &ueLteDevs);
 	lteNetwork.connectUeToNearestEnb(&ueLteDevs, &enbLteDevs);
@@ -58,7 +61,7 @@ int main(int argc, char *argv[]) {
 
 
 	//Setup netAnim settings
-	AnimationInterface anim("./scratch/Simulation.xml");
+	AnimationInterface anim("./scratch/animation-simulation.xml");
 	int UEImageId = anim.AddResource("./scratch/UE.png");
 	int ENBImageId = anim.AddResource("./scratch/ENB.png");
 	enbContainer.setNetAnimProperties(&anim, ENBImageId);
@@ -69,7 +72,7 @@ int main(int argc, char *argv[]) {
 	FlowMonitorHelper flowHelper;
 	flowMonitor = flowHelper.InstallAll();
 
-	Simulator::Stop(Seconds(10));
+	Simulator::Stop(Seconds(15));
 	flowMonitor->SerializeToXmlFile("./scratch/Simulation-measurements.xml", true, true);
 	Simulator::Run();
 

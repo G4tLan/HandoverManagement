@@ -22,8 +22,11 @@ namespace ns3 {
 class UE {
 public:
 	UE(int, int, int, int);
+	UE(int, int, int);
 	void setNetAnimProperties(AnimationInterface*, int);
-	NodeContainer* getUes(){return &UENodes;}
+	NodeContainer* getUes() {
+		return &UENodes;
+	}
 private:
 	int numOfUEs;
 	NodeContainer UENodes;
@@ -34,6 +37,28 @@ private:
 	int yCenter;
 	int radius;
 };
+
+UE::UE(int numberOfUes, int yPosition, int speedDifference) :
+		xCenter(0), yCenter(0), radius(0) {
+	numOfUEs = numberOfUes;
+	UENodes.Create(numberOfUes);
+
+	Ptr<ListPositionAllocator> positionAlloc = CreateObject<
+			ListPositionAllocator>();
+	for (int i = 0; i < numberOfUes; i++) {
+		positionAlloc->Add(Vector(-50, yPosition, 0));
+	}
+
+	UeMobilityHelper.SetPositionAllocator(positionAlloc);
+	UeMobilityHelper.SetMobilityModel("ns3::ConstantVelocityMobilityModel");
+	UeMobilityHelper.Install(UENodes);
+	int minimumSpeed = 10; //m/s
+	for (uint n = 0; n < UENodes.GetN(); n++) {
+		Ptr<ConstantVelocityMobilityModel> mob  =
+				UENodes.Get(n)->GetObject<ConstantVelocityMobilityModel>();
+		mob->SetVelocity(Vector(minimumSpeed + n * speedDifference, 0, 0));
+	}
+}
 
 UE::UE(int numberOfUes, int xBound, int yBound, int _radius) {
 	numOfUEs = numberOfUes;
@@ -46,16 +71,17 @@ UE::UE(int numberOfUes, int xBound, int yBound, int _radius) {
 					"ns3::UniformRandomVariable[Min=5|Max="
 							+ std::to_string(_radius) + "]"));
 
-	UeMobilityHelper60Kmh.SetPositionAllocator("ns3::RandomDiscPositionAllocator",
-			"X", StringValue(std::to_string(xBound)), "Y",
+	UeMobilityHelper60Kmh.SetPositionAllocator(
+			"ns3::RandomDiscPositionAllocator", "X",
+			StringValue(std::to_string(xBound)), "Y",
 			StringValue(std::to_string(yBound)), "Rho",
 			StringValue(
 					"ns3::UniformRandomVariable[Min=5|Max="
 							+ std::to_string(_radius) + "]"));
 
-
-	UeMobilityHelper120Kmh.SetPositionAllocator("ns3::RandomDiscPositionAllocator",
-			"X", StringValue(std::to_string(xBound)), "Y",
+	UeMobilityHelper120Kmh.SetPositionAllocator(
+			"ns3::RandomDiscPositionAllocator", "X",
+			StringValue(std::to_string(xBound)), "Y",
 			StringValue(std::to_string(yBound)), "Rho",
 			StringValue(
 					"ns3::UniformRandomVariable[Min=5|Max="
@@ -75,15 +101,17 @@ UE::UE(int numberOfUes, int xBound, int yBound, int _radius) {
 			StringValue("ns3::ConstantRandomVariable[Constant=2.0]"), "Bounds",
 			RectangleValue(Rectangle(xmin, xmax, ymin, ymax)));
 
-	UeMobilityHelper60Kmh.SetMobilityModel("ns3::RandomDirection2dMobilityModel",
-			"Bounds", RectangleValue(Rectangle(xmin, xmax, ymin, ymax)),
-			"Speed", StringValue("ns3::ConstantRandomVariable[Constant=17]"),
-			"Pause", StringValue("ns3::ConstantRandomVariable[Constant=0.2]"));
+	UeMobilityHelper60Kmh.SetMobilityModel(
+			"ns3::RandomDirection2dMobilityModel", "Bounds",
+			RectangleValue(Rectangle(xmin, xmax, ymin, ymax)), "Speed",
+			StringValue("ns3::ConstantRandomVariable[Constant=17]"), "Pause",
+			StringValue("ns3::ConstantRandomVariable[Constant=0.2]"));
 
-	UeMobilityHelper120Kmh.SetMobilityModel("ns3::RandomDirection2dMobilityModel",
-			"Bounds", RectangleValue(Rectangle(xmin, xmax, ymin, ymax)),
-			"Speed", StringValue("ns3::ConstantRandomVariable[Constant=36]"),
-			"Pause", StringValue("ns3::ConstantRandomVariable[Constant=0.2]"));
+	UeMobilityHelper120Kmh.SetMobilityModel(
+			"ns3::RandomDirection2dMobilityModel", "Bounds",
+			RectangleValue(Rectangle(xmin, xmax, ymin, ymax)), "Speed",
+			StringValue("ns3::ConstantRandomVariable[Constant=36]"), "Pause",
+			StringValue("ns3::ConstantRandomVariable[Constant=0.2]"));
 
 	int numOfRandomUEs = 0.6 * numberOfUes;
 	int numOf60KMpHUEs = 0.55 * numberOfUes; //17 m/s

@@ -20,34 +20,69 @@
 namespace ns3 {
 class Enbs {
 public:
-	Enbs(int numOfEnbs, int distance);
-	NodeContainer* getEnbs() {return &enbNodes;}
-	void ConnectClosestEnbX2Interface(Ptr<LteHelper>);
+	enum Position_Types {
+		HEX_MATRIX, STRAIGHT_LINE
+	};
+	Enbs(int numOfEnbs, int distance, Enbs::Position_Types);
+	NodeContainer* getEnbs() {
+		return &enbNodes;
+	}
+	void ConnectClosestEnbX2Interface(Ptr<LteHelper>, Enbs::Position_Types);
 	void setNetAnimProperties(AnimationInterface*, int);
-	int GetNumOfEnbsInRow(){return numOfEnbsHorizontally;}
-	int GetNumOfRows(){return numOfEnbRows;}
+	int GetNumOfEnbsInRow() {
+		return numOfEnbsHorizontally;
+	}
+	int GetNumOfRows() {
+		return numOfEnbRows;
+	}
 private:
 	NodeContainer enbNodes;
 	MobilityHelper enbMobility;
 	int numOfEnb;
-
-	Ptr<ListPositionAllocator> generateEnbLocations(int numOfEnbs,
-			int distance);
 	int numOfEnbsHorizontally;
 	int numOfEnbRows;
+
+	Ptr<ListPositionAllocator> generateEnbLocationsHex(int numOfEnbs,
+			int distance);
+	Ptr<ListPositionAllocator> generateEnbLocationsStraight(int numOfEnbs,
+			int distance);
+
+	void ConnectClosestEnbX2InterfaceHex(Ptr<LteHelper>);
+	void ConnectClosestEnbX2InterfaceStraight(Ptr<LteHelper>);
 };
 
-Enbs::Enbs(int numOfEnbs, int distance) {
+Enbs::Enbs(int numOfEnbs, int distance, Enbs::Position_Types p) {
 	enbNodes.Create(numOfEnbs);
 	numOfEnb = numOfEnbs;
 	numOfEnbsHorizontally = 5;
 	numOfEnbRows = 0;
 	enbMobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-	enbMobility.SetPositionAllocator(generateEnbLocations(numOfEnbs, distance));
+	switch (p) {
+	case Enbs::Position_Types::HEX_MATRIX:
+		enbMobility.SetPositionAllocator(
+				generateEnbLocationsHex(numOfEnbs, distance));
+		break;
+	case Enbs::Position_Types::STRAIGHT_LINE:
+	default:
+		enbMobility.SetPositionAllocator(
+				generateEnbLocationsStraight(numOfEnbs, distance));
+	}
 	enbMobility.Install(enbNodes);
 }
 
-Ptr<ListPositionAllocator> Enbs::generateEnbLocations(int numOfEnbs,
+Ptr<ListPositionAllocator> Enbs::generateEnbLocationsStraight(int numOfEnbs,
+		int distance) {
+	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<
+			ListPositionAllocator>();
+
+	for (int i = 0; i < numOfEnbs; i++) {
+		enbPositionAlloc->Add(Vector(i * distance, 50, 0));
+	}
+
+	return enbPositionAlloc;
+}
+
+Ptr<ListPositionAllocator> Enbs::generateEnbLocationsHex(int numOfEnbs,
 		int distance) {
 	{
 		Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<
@@ -80,13 +115,13 @@ Ptr<ListPositionAllocator> Enbs::generateEnbLocations(int numOfEnbs,
 	}
 }
 
-void Enbs::ConnectClosestEnbX2Interface(Ptr<LteHelper> lteHelper) {
+void Enbs::ConnectClosestEnbX2InterfaceHex(Ptr<LteHelper> lteHelper) {
 	for (int row = 0; row < numOfEnbRows; row++) {
 		int start = row * numOfEnbsHorizontally;
 		int end = (row + 1) * numOfEnbsHorizontally - 1;
 		int n = start;
 		for (int enbAtRow = 0; enbAtRow < numOfEnbsHorizontally; enbAtRow++) {
-			if(n >= numOfEnb){
+			if (n >= numOfEnb) {
 				break;
 			}
 			//connect to enb on the left
@@ -94,21 +129,29 @@ void Enbs::ConnectClosestEnbX2Interface(Ptr<LteHelper> lteHelper) {
 				lteHelper->AddX2Interface(enbNodes.Get(n - 1), enbNodes.Get(n));
 			}
 			//if first row
-			if(row == 0){
+			if (row == 0) {
 				n++;
 				continue;
 			}
 			enbNodes.GetN();
 			//if row is odd
 			if (row % 2 == 1) {
-				lteHelper->AddX2Interface(enbNodes.Get(n - numOfEnbsHorizontally), enbNodes.Get(n));
-				if(n < end){
-					lteHelper->AddX2Interface(enbNodes.Get(n - numOfEnbsHorizontally + 1), enbNodes.Get(n));
+				lteHelper->AddX2Interface(
+						enbNodes.Get(n - numOfEnbsHorizontally),
+						enbNodes.Get(n));
+				if (n < end) {
+					lteHelper->AddX2Interface(
+							enbNodes.Get(n - numOfEnbsHorizontally + 1),
+							enbNodes.Get(n));
 				}
-			} else {//row is even
-				lteHelper->AddX2Interface(enbNodes.Get(n - numOfEnbsHorizontally), enbNodes.Get(n));
-				if(n > start){
-					lteHelper->AddX2Interface(enbNodes.Get(n - numOfEnbsHorizontally - 1), enbNodes.Get(n));
+			} else { //row is even
+				lteHelper->AddX2Interface(
+						enbNodes.Get(n - numOfEnbsHorizontally),
+						enbNodes.Get(n));
+				if (n > start) {
+					lteHelper->AddX2Interface(
+							enbNodes.Get(n - numOfEnbsHorizontally - 1),
+							enbNodes.Get(n));
 				}
 			}
 			n++;
@@ -116,12 +159,32 @@ void Enbs::ConnectClosestEnbX2Interface(Ptr<LteHelper> lteHelper) {
 	}
 }
 
-void Enbs::setNetAnimProperties(AnimationInterface* anim, int imageId){
-	for(int i = 0; i < numOfEnb; i++){
+void Enbs::ConnectClosestEnbX2InterfaceStraight(Ptr<LteHelper> lteHelper) {
+	for (int i = 1; i < numOfEnb; i++) {
+		lteHelper->AddX2Interface(enbNodes.Get(i - 1), enbNodes.Get(i));
+	}
+}
+
+void Enbs::ConnectClosestEnbX2Interface(Ptr<LteHelper> lteHelper,
+		Enbs::Position_Types p) {
+	switch(p){
+	case Enbs::Position_Types::HEX_MATRIX:
+		ConnectClosestEnbX2InterfaceHex(lteHelper);
+		break;
+	case Enbs::Position_Types::STRAIGHT_LINE:
+		ConnectClosestEnbX2InterfaceStraight(lteHelper);
+		break;
+	default:
+		break;
+	}
+}
+
+void Enbs::setNetAnimProperties(AnimationInterface* anim, int imageId) {
+	for (int i = 0; i < numOfEnb; i++) {
 		int nodeId = enbNodes.Get(i)->GetId();
-		anim->UpdateNodeImage(nodeId,imageId);
+		anim->UpdateNodeImage(nodeId, imageId);
 		anim->UpdateNodeSize(nodeId, 15, 15);
-		anim->UpdateNodeDescription( enbNodes.Get(i), "Enb");
+		anim->UpdateNodeDescription(enbNodes.Get(i), "Enb");
 	}
 	anim = 0;
 }
