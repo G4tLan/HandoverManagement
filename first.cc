@@ -19,30 +19,25 @@ NS_LOG_COMPONENT_DEFINE("LenaX2HandoverMeasures");
  */
 
 int main(int argc, char *argv[]) {
-	int numberOfEnbs = 2;
-	int numberOfUes = 6;
-	int distance = 500; //m
-	Enbs::Position_Types type = Enbs::STRAIGHT_LINE;
+	int numberOfEnbs = 19;
+	int numberOfUes = 0;
+	int distance = 50; //m
+	Enbs::Position_Types type = Enbs::HEX_MATRIX;
 
 	CommandLine cmd;
 	cmd.AddValue("nEnbs", "Number of Enbs", numberOfEnbs);
 	cmd.AddValue("nUes", "Number of Ues", numberOfUes);
 	cmd.AddValue("distance", "distance between enbs", distance);
 	cmd.Parse(argc, argv);
+	ConfigStore inputConfig;
+	inputConfig.ConfigureDefaults ();
+	cmd.Parse(argc, argv);
 
 	Enbs enbContainer(numberOfEnbs, distance, type);
-	//int xCenter = (enbContainer.GetNumOfEnbsInRow() + 1) * distance / 2;
-	//int yCenter = (enbContainer.GetNumOfRows() - 1) * distance / 2;
-	//int radius = yCenter;
-	//if (xCenter > yCenter) {
-		//radius = xCenter;
-	//}
-	//UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4); //random positions
 	UE ueContainer(numberOfUes, 20, 20); //different speeds
 
 	double eNbTxPower = 46; //dbm
 	Config::SetDefault("ns3::LteEnbPhy::TxPower", DoubleValue(eNbTxPower));
-	//Config::SetDefault("ns3::LteUePhy::TxPower", DoubleValue(10.0));
 
 	//setup the network
 	LteNetworkConfiguration lteNetwork;
@@ -58,6 +53,7 @@ int main(int argc, char *argv[]) {
 	lteNetwork.installIpStackUe(ueContainer.getUes(), &ueLteDevs);
 	lteNetwork.connectUeToNearestEnb(&ueLteDevs, &enbLteDevs);
 	lteNetwork.startApps(ueContainer.getUes(), &ueLteDevs);
+	lteNetwork.setupTraces();
 
 
 	//Setup netAnim settings
@@ -73,8 +69,8 @@ int main(int argc, char *argv[]) {
 	flowMonitor = flowHelper.InstallAll();
 
 	Simulator::Stop(Seconds(15));
-	flowMonitor->SerializeToXmlFile("./scratch/Simulation-measurements.xml", true, true);
 	Simulator::Run();
+	flowMonitor->SerializeToXmlFile("./scratch/Simulation-measurements.xml", true, true);
 
 	Simulator::Destroy();
 	return 0;

@@ -82,35 +82,77 @@ Ptr<ListPositionAllocator> Enbs::generateEnbLocationsStraight(int numOfEnbs,
 	return enbPositionAlloc;
 }
 
+bool checkExists(ListPositionAllocator L, Vector v) {
+	double epsilon = 0.0001;
+	Vector existing;
+	for (uint32_t i = 0; i < L.GetSize(); i++) {
+		Vector existing = L.GetNext();
+		if (std::fabs(v.x - existing.x) <= epsilon) {
+			if (std::fabs(v.y - existing.y) <= epsilon) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+std::vector<Vector> generatePoints(Vector refPoint, int distance) {
+	std::vector<Vector> points;
+	//0 rad
+	points.push_back(Vector(refPoint.x + distance, refPoint.y, 0));
+	// pi/3 rad
+	points.push_back(
+			Vector(refPoint.x + distance / 2,
+					refPoint.y + distance * 0.86602540378, 0));
+	// 2pi/3 rad
+	points.push_back(
+			Vector(refPoint.x - distance / 2,
+					refPoint.y + distance * 0.86602540378, 0));
+	// pi rad
+	points.push_back(Vector(refPoint.x - distance, refPoint.y, 0));
+	// 4pi/3 rad
+	points.push_back(
+			Vector(refPoint.x - distance / 2,
+					refPoint.y - distance * 0.86602540378, 0));
+	// 5pi/3 rad
+	points.push_back(
+			Vector(refPoint.x + distance / 2,
+					refPoint.y - distance * 0.86602540378, 0));
+
+	return points;
+}
+
 Ptr<ListPositionAllocator> Enbs::generateEnbLocationsHex(int numOfEnbs,
 		int distance) {
 	{
 		Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<
 				ListPositionAllocator>();
-		if (numOfEnbs <= 5 && numOfEnbs > 1) {
-			numOfEnbsHorizontally = numOfEnbs / 2;
-		}
-		numOfEnbRows = (numOfEnbs + 1) / numOfEnbsHorizontally;
-		if (numOfEnbs == 1 || numOfEnbs > 5) {
-			numOfEnbRows += 1;
-		}
-		int count = 0;
-		for (int y = 0; y < numOfEnbRows; y++) {
-			for (int x = 0; x < numOfEnbsHorizontally; x++) {
+
+		Vector refPoint = Vector(200, 200, 0);
+		enbPositionAlloc->Add(refPoint);
+		std::vector<Vector> points = generatePoints(refPoint, distance);
+
+		numOfEnbs = numOfEnbs - 1;
+		int i = 0, count = 0, refPointIndex = 1;
+		 while (count < numOfEnbs) {
+			if (!checkExists(*enbPositionAlloc, points.at(i))) {
+				std::cout << points.at(i).x << " , " << points.at(i).y << std::endl;
+				enbPositionAlloc->Add(points.at(i));
 				count++;
-				if (count > numOfEnbs) {
-					break;
-				}
-				if (y % 2 == 0) {
-					enbPositionAlloc->Add(
-							Vector(2 * distance * x, y * distance, 0));
-				} else {
-					enbPositionAlloc->Add(
-							Vector((2 * distance * x + distance), y * distance,
-									0));
-				}
 			}
-		}
+
+			i = (i + 1) % 6;
+			if (i == 0) {
+				refPointIndex++;
+				for(int ind = 0; ind < refPointIndex; ind++){
+					refPoint = enbPositionAlloc->GetNext();
+				}
+				for(int reset = 0; reset < count + 1 - refPointIndex; reset++){
+					enbPositionAlloc->GetNext();
+				}
+				points = generatePoints(refPoint, distance);
+			}
+		};
 		return enbPositionAlloc;
 	}
 }
@@ -167,7 +209,7 @@ void Enbs::ConnectClosestEnbX2InterfaceStraight(Ptr<LteHelper> lteHelper) {
 
 void Enbs::ConnectClosestEnbX2Interface(Ptr<LteHelper> lteHelper,
 		Enbs::Position_Types p) {
-	switch(p){
+	switch (p) {
 	case Enbs::Position_Types::HEX_MATRIX:
 		ConnectClosestEnbX2InterfaceHex(lteHelper);
 		break;

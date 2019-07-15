@@ -38,6 +38,7 @@ public:
 	void connectUeToNearestEnb(NetDeviceContainer*,NetDeviceContainer*);
 	void installIpStackUe(NodeContainer*, NetDeviceContainer*);
 	void startApps(NodeContainer*, NetDeviceContainer*);
+	void setupTraces();
 private:
 	Ptr<LteHelper> lteHelper;
 	Ptr<PointToPointEpcHelper> epcHelper;
@@ -83,6 +84,7 @@ void LteNetworkConfiguration::setUpLteHelperWithEpc() {
 			UintegerValue (30));
 	lteHelper->SetHandoverAlgorithmAttribute ("NeighbourCellOffset",
 			UintegerValue (1));
+	lteHelper->SetSchedulerType("ns3::RrFfMacScheduler");
 }
 
 void LteNetworkConfiguration::setUpEpc() {
@@ -211,6 +213,14 @@ void LteNetworkConfiguration::startApps(NodeContainer* ueNodes, NetDeviceContain
 	ueNodes = NULL;
 	ueLteDevs = NULL;
 }
+
+void LteNetworkConfiguration::setupTraces(){
+	lteHelper->EnablePhyTraces ();
+	lteHelper->EnableMacTraces ();
+	lteHelper->EnableRlcTraces ();
+	lteHelper->EnablePdcpTraces ();
+}
+
 }
 
 #endif /* SCRATCH_LTENETWORKCONFIGURATION_H_ */
