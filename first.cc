@@ -21,7 +21,7 @@ NS_LOG_COMPONENT_DEFINE("LenaX2HandoverMeasures");
 int main(int argc, char *argv[]) {
 	int numberOfEnbs = 19;
 	int numberOfUes = 0;
-	int distance = 50; //m
+	int distance = 200; //m
 	Enbs::Position_Types type = Enbs::HEX_MATRIX;
 
 	CommandLine cmd;
@@ -69,6 +69,7 @@ int main(int argc, char *argv[]) {
 	flowMonitor = flowHelper.InstallAll();
 
 	Simulator::Stop(Seconds(15));
+	std::cout << "simulation start" << std::endl;
 	Simulator::Run();
 	flowMonitor->SerializeToXmlFile("./scratch/Simulation-measurements.xml", true, true);
 

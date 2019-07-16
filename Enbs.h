@@ -23,6 +23,11 @@ public:
 	enum Position_Types {
 		HEX_MATRIX, STRAIGHT_LINE
 	};
+
+	struct X2ConnectionPair {
+		int node1Index;
+		int node2Index;
+	};
 	Enbs(int numOfEnbs, int distance, Enbs::Position_Types);
 	NodeContainer* getEnbs() {
 		return &enbNodes;
@@ -41,11 +46,18 @@ private:
 	int numOfEnb;
 	int numOfEnbsHorizontally;
 	int numOfEnbRows;
+	std::vector<Enbs::X2ConnectionPair> pairs;
 
 	Ptr<ListPositionAllocator> generateEnbLocationsHex(int numOfEnbs,
 			int distance);
 	Ptr<ListPositionAllocator> generateEnbLocationsStraight(int numOfEnbs,
 			int distance);
+	Enbs::X2ConnectionPair createPair(int a, int b){
+		Enbs::X2ConnectionPair pair;
+		pair.node1Index = a;
+		pair.node2Index = b;
+		return pair;
+	}
 
 	void ConnectClosestEnbX2InterfaceHex(Ptr<LteHelper>);
 	void ConnectClosestEnbX2InterfaceStraight(Ptr<LteHelper>);
@@ -82,17 +94,19 @@ Ptr<ListPositionAllocator> Enbs::generateEnbLocationsStraight(int numOfEnbs,
 	return enbPositionAlloc;
 }
 
-bool checkExists(ListPositionAllocator L, Vector v) {
+bool checkExists(ListPositionAllocator L, Vector v, int& index) {
 	double epsilon = 0.0001;
 	Vector existing;
 	for (uint32_t i = 0; i < L.GetSize(); i++) {
 		Vector existing = L.GetNext();
 		if (std::fabs(v.x - existing.x) <= epsilon) {
 			if (std::fabs(v.y - existing.y) <= epsilon) {
+				index = i;
 				return true;
 			}
 		}
 	}
+	index = L.GetSize();
 	return false;
 }
 
@@ -122,32 +136,70 @@ std::vector<Vector> generatePoints(Vector refPoint, int distance) {
 	return points;
 }
 
+bool checkPairsExist(std::vector<Enbs::X2ConnectionPair> pairs, Enbs::X2ConnectionPair pair) {
+
+	for(uint32_t  i = 0; i< pairs.size(); i++){
+		Enbs::X2ConnectionPair temp = pairs.at(i);
+
+		if((pair.node1Index == temp.node1Index && pair.node2Index == temp.node2Index)
+				|| (pair.node1Index == temp.node2Index && pair.node2Index == temp.node1Index)){
+			return true;
+		}
+	}
+	return false;
+}
+
 Ptr<ListPositionAllocator> Enbs::generateEnbLocationsHex(int numOfEnbs,
 		int distance) {
 	{
 		Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<
 				ListPositionAllocator>();
 
-		Vector refPoint = Vector(200, 200, 0);
+		Vector refPoint = Vector(0, 0, 0);
 		enbPositionAlloc->Add(refPoint);
 		std::vector<Vector> points = generatePoints(refPoint, distance);
 
 		numOfEnbs = numOfEnbs - 1;
-		int i = 0, count = 0, refPointIndex = 1;
+		int i = 0, count = 0, refPointIndex = 0, pointIndex = -1, prevPointIndex = -1, startPointIndex = -1;
 		 while (count < numOfEnbs) {
-			if (!checkExists(*enbPositionAlloc, points.at(i))) {
-				std::cout << points.at(i).x << " , " << points.at(i).y << std::endl;
+			if (!checkExists(*enbPositionAlloc, points.at(i), pointIndex)) {
+				std::cout << points.at(i).x << " , " << points.at(i).y << " index " << pointIndex << std::endl;
 				enbPositionAlloc->Add(points.at(i));
+				/*
+				 * parent refers refpoint
+				 * child refers to point
+				 */
+				pairs.push_back(createPair(refPointIndex, pointIndex)); //pair parent with child
+				//pair current child with previous child
+				if(prevPointIndex > 0){ //exclude first child
+					if(!checkPairsExist(pairs, createPair(prevPointIndex, pointIndex))){
+						pairs.push_back(createPair(prevPointIndex, pointIndex));
+					}
+				}
+				//last child i = 5
 				count++;
+			} else {
+				if(!checkPairsExist(pairs, createPair(refPointIndex, pointIndex))){
+					pairs.push_back(createPair(refPointIndex, pointIndex));
+				}
+			}
+			prevPointIndex = pointIndex;
+			if(i == 0) {
+				startPointIndex = pointIndex;
+			}
+			if(i == 5){
+				if(!checkPairsExist(pairs, createPair(startPointIndex, pointIndex))){
+					pairs.push_back(createPair(startPointIndex, pointIndex));
+				}
 			}
 
 			i = (i + 1) % 6;
 			if (i == 0) {
 				refPointIndex++;
-				for(int ind = 0; ind < refPointIndex; ind++){
+				for(int ind = 0; ind <= refPointIndex; ind++){
 					refPoint = enbPositionAlloc->GetNext();
 				}
-				for(int reset = 0; reset < count + 1 - refPointIndex; reset++){
+				for(int reset = 0; reset < count - refPointIndex; reset++){
 					enbPositionAlloc->GetNext();
 				}
 				points = generatePoints(refPoint, distance);
@@ -158,47 +210,11 @@ Ptr<ListPositionAllocator> Enbs::generateEnbLocationsHex(int numOfEnbs,
 }
 
 void Enbs::ConnectClosestEnbX2InterfaceHex(Ptr<LteHelper> lteHelper) {
-	for (int row = 0; row < numOfEnbRows; row++) {
-		int start = row * numOfEnbsHorizontally;
-		int end = (row + 1) * numOfEnbsHorizontally - 1;
-		int n = start;
-		for (int enbAtRow = 0; enbAtRow < numOfEnbsHorizontally; enbAtRow++) {
-			if (n >= numOfEnb) {
-				break;
-			}
-			//connect to enb on the left
-			if (n > start) {
-				lteHelper->AddX2Interface(enbNodes.Get(n - 1), enbNodes.Get(n));
-			}
-			//if first row
-			if (row == 0) {
-				n++;
-				continue;
-			}
-			enbNodes.GetN();
-			//if row is odd
-			if (row % 2 == 1) {
-				lteHelper->AddX2Interface(
-						enbNodes.Get(n - numOfEnbsHorizontally),
-						enbNodes.Get(n));
-				if (n < end) {
-					lteHelper->AddX2Interface(
-							enbNodes.Get(n - numOfEnbsHorizontally + 1),
-							enbNodes.Get(n));
-				}
-			} else { //row is even
-				lteHelper->AddX2Interface(
-						enbNodes.Get(n - numOfEnbsHorizontally),
-						enbNodes.Get(n));
-				if (n > start) {
-					lteHelper->AddX2Interface(
-							enbNodes.Get(n - numOfEnbsHorizontally - 1),
-							enbNodes.Get(n));
-				}
-			}
-			n++;
+		int numberOfPairs = pairs.size();
+		for(int pair = 0; pair < numberOfPairs; pair++){
+			lteHelper->AddX2Interface(enbNodes.Get(pairs.at(pair).node1Index),
+					enbNodes.Get(pairs.at(pair).node2Index));
 		}
-	}
 }
 
 void Enbs::ConnectClosestEnbX2InterfaceStraight(Ptr<LteHelper> lteHelper) {
