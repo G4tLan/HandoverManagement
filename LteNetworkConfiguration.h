@@ -79,7 +79,9 @@ LteNetworkConfiguration::LteNetworkConfiguration() {
 void LteNetworkConfiguration::setUpLteHelperWithEpc() {
 	lteHelper = CreateObject<LteHelper>();
 	lteHelper->SetEpcHelper(epcHelper);
-	lteHelper->SetHandoverAlgorithmType ("ns3::A2A4RsrqHandoverAlgorithm");
+	//////////////////////////////////////////
+	lteHelper->SetHandoverAlgorithmType ("ns3::algorithmAdam"); //set algorithm here
+	////////////////////////////////////////////////////////
 	lteHelper->SetHandoverAlgorithmAttribute ("ServingCellThreshold",
 			UintegerValue (30));
 	lteHelper->SetHandoverAlgorithmAttribute ("NeighbourCellOffset",

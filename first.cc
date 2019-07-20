@@ -20,7 +20,7 @@ NS_LOG_COMPONENT_DEFINE("LenaX2HandoverMeasures");
 
 int main(int argc, char *argv[]) {
 	int numberOfEnbs = 19;
-	int numberOfUes = 0;
+	int numberOfUes = 10;
 	int distance = 200; //m
 	Enbs::Position_Types type = Enbs::HEX_MATRIX;
 
