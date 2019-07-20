@@ -80,13 +80,13 @@ void LteNetworkConfiguration::setUpLteHelperWithEpc() {
 	lteHelper = CreateObject<LteHelper>();
 	lteHelper->SetEpcHelper(epcHelper);
 	//////////////////////////////////////////
-	lteHelper->SetHandoverAlgorithmType ("ns3::algorithmAdam"); //set algorithm here
+	lteHelper->SetHandoverAlgorithmType ("ns3::NoOpHandoverAlgorithm"); //set algorithm here
 	////////////////////////////////////////////////////////
-	lteHelper->SetHandoverAlgorithmAttribute ("ServingCellThreshold",
+	/*lteHelper->SetHandoverAlgorithmAttribute ("ServingCellThreshold",
 			UintegerValue (30));
 	lteHelper->SetHandoverAlgorithmAttribute ("NeighbourCellOffset",
-			UintegerValue (1));
-	lteHelper->SetSchedulerType("ns3::RrFfMacScheduler");
+			UintegerValue (1));*/
+	//lteHelper->SetSchedulerType("ns3::RrFfMacScheduler");
 }
 
 void LteNetworkConfiguration::setUpEpc() {

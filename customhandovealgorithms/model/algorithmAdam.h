@@ -6,8 +6,8 @@
  * 
  */
 
-#ifndef ALGORITHM_ADAM_H
-#define ALGORITHM_ADAM_H
+#ifndef SCRATCH_ALGORITHM_ADAM_H
+#define SCRATCH_ALGORITHM_ADAM_H
 
 #include <ns3/lte-handover-algorithm.h>
 #include <ns3/lte-handover-management-sap.h>
