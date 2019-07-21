@@ -18,11 +18,16 @@ NS_LOG_COMPONENT_DEFINE("LenaX2HandoverMeasures");
  * the 'target' eNB when it considers it is a better eNB.
  */
 
+void simulationCompletion() {
+	
+}
+
 int main(int argc, char *argv[]) {
 	int numberOfEnbs = 19;
-	int numberOfUes = 0;
+	int numberOfUes = 10;
 	int distance = 200; //m
 	Enbs::Position_Types type = Enbs::HEX_MATRIX;
+	int simulationTime = 15;
 
 	CommandLine cmd;
 	cmd.AddValue("nEnbs", "Number of Enbs", numberOfEnbs);

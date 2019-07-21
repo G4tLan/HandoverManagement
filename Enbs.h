@@ -155,7 +155,7 @@ Ptr<ListPositionAllocator> Enbs::generateEnbLocationsHex(int numOfEnbs,
 		Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<
 				ListPositionAllocator>();
 
-		Vector refPoint = Vector(0, 0, 0);
+		Vector refPoint = Vector(512, 512, 0);
 		enbPositionAlloc->Add(refPoint);
 		std::vector<Vector> points = generatePoints(refPoint, distance);
 
@@ -163,7 +163,6 @@ Ptr<ListPositionAllocator> Enbs::generateEnbLocationsHex(int numOfEnbs,
 		int i = 0, count = 0, refPointIndex = 0, pointIndex = -1, prevPointIndex = -1, startPointIndex = -1;
 		 while (count < numOfEnbs) {
 			if (!checkExists(*enbPositionAlloc, points.at(i), pointIndex)) {
-				std::cout << points.at(i).x << " , " << points.at(i).y << " index " << pointIndex << std::endl;
 				enbPositionAlloc->Add(points.at(i));
 				/*
 				 * parent refers refpoint

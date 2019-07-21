@@ -79,11 +79,11 @@ LteNetworkConfiguration::LteNetworkConfiguration() {
 void LteNetworkConfiguration::setUpLteHelperWithEpc() {
 	lteHelper = CreateObject<LteHelper>();
 	lteHelper->SetEpcHelper(epcHelper);
-	lteHelper->SetHandoverAlgorithmType ("ns3::A2A4RsrqHandoverAlgorithm");
-	lteHelper->SetHandoverAlgorithmAttribute ("ServingCellThreshold",
+	lteHelper->SetHandoverAlgorithmType ("ns3::algorithmAdam");
+	/*lteHelper->SetHandoverAlgorithmAttribute ("ServingCellThreshold",
 			UintegerValue (30));
 	lteHelper->SetHandoverAlgorithmAttribute ("NeighbourCellOffset",
-			UintegerValue (1));
+			UintegerValue (1));*/
 	lteHelper->SetSchedulerType("ns3::RrFfMacScheduler");
 }
 
