@@ -18,8 +18,12 @@ NS_LOG_COMPONENT_DEFINE("LenaX2HandoverMeasures");
  * the 'target' eNB when it considers it is a better eNB.
  */
 
-void simulationCompletion() {
-	
+void simulationCompletion(double totalSimTime ) {
+	ns3::Time currentTime = Simulator::Now();
+	std::cout << "simulation completion "
+	 << currentTime.GetMilliSeconds()/(totalSimTime*10) << "%" << std::endl;
+	Simulator::Schedule(Seconds(currentTime.GetMilliSeconds()/1000.0 + 0.5), 
+	&simulationCompletion, totalSimTime);
 }
 
 int main(int argc, char *argv[]) {
@@ -27,7 +31,7 @@ int main(int argc, char *argv[]) {
 	int numberOfUes = 10;
 	int distance = 200; //m
 	Enbs::Position_Types type = Enbs::HEX_MATRIX;
-	int simulationTime = 15;
+	double simulationTime = 2;
 
 	CommandLine cmd;
 	cmd.AddValue("nEnbs", "Number of Enbs", numberOfEnbs);
@@ -73,7 +77,8 @@ int main(int argc, char *argv[]) {
 	FlowMonitorHelper flowHelper;
 	flowMonitor = flowHelper.InstallAll();
 
-	Simulator::Stop(Seconds(15));
+	Simulator::Schedule(Seconds(0), &simulationCompletion, simulationTime);
+	Simulator::Stop(Seconds(simulationTime));
 	std::cout << "simulation start" << std::endl;
 	Simulator::Run();
 	flowMonitor->SerializeToXmlFile("./scratch/Simulation-measurements.xml", true, true);
