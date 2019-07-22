@@ -43,7 +43,14 @@ int main(int argc, char *argv[]) {
 	cmd.Parse(argc, argv);
 
 	Enbs enbContainer(numberOfEnbs, distance, type);
-	UE ueContainer(numberOfUes, 20, 20); //different speeds
+	//UE ueContainer(numberOfUes, 20, 20); //different speeds
+	int xCenter = 512;
+	int yCenter = 512;
+	int radius = yCenter;
+	if (xCenter > yCenter) {
+		radius = xCenter;
+	}
+	UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4);
 
 	double eNbTxPower = 46; //dbm
 	Config::SetDefault("ns3::LteEnbPhy::TxPower", DoubleValue(eNbTxPower));
