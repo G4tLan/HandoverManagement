@@ -26,12 +26,46 @@ void simulationCompletion(double totalSimTime ) {
 	&simulationCompletion, totalSimTime);
 }
 
+double calculateDistance(Vector p1, Vector p2){
+	double dist  = (p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y);
+
+	return std::sqrt(dist);
+}
+
+void updateUePositionHistory(NodeContainer* UENodes, 
+		std::map<uint32_t, UE::historyPos>* uePositionHistory,
+		double loggingDistance) {
+	double currentTime = Simulator::Now().GetSeconds();
+	for (uint n = 0; n < UENodes->GetN(); n++) {
+		Ptr<Node> node = UENodes->Get(n)->GetObject<Node>();
+		Ptr<MobilityModel> mob = UENodes->Get(n)->GetObject<MobilityModel>();
+		auto it = uePositionHistory->find(node->GetId());
+
+		if(it == uePositionHistory->end()){
+			UE::historyPos historyP1P2;
+			historyP1P2.p1 = mob->GetPosition();
+			historyP1P2.p2 = mob->GetPosition();
+			uePositionHistory->insert(std::make_pair(node->GetId(), historyP1P2));
+		} else {
+			if(calculateDistance(mob->GetPosition(), it->second.p2) >= loggingDistance){
+				std::cout << "-----adding for node " << node->GetId() << " t " 
+					<< currentTime << std::endl;
+				it->second.p1 = it->second.p2;
+				it->second.p2 = mob->GetPosition();
+			}
+		}
+	}
+
+	UENodes = NULL;
+	uePositionHistory = NULL;
+}
+
 int main(int argc, char *argv[]) {
-	int numberOfEnbs = 19;
-	int numberOfUes = 10;
+	int numberOfEnbs = 11;
+	int numberOfUes = 1;
 	int distance = 200; //m
 	Enbs::Position_Types type = Enbs::HEX_MATRIX;
-	double simulationTime = 2;
+	double simulationTime = 20;
 
 	CommandLine cmd;
 	cmd.AddValue("nEnbs", "Number of Enbs", numberOfEnbs);
@@ -46,13 +80,12 @@ int main(int argc, char *argv[]) {
 	//UE ueContainer(numberOfUes, 20, 20); //different speeds
 	int xCenter = 512;
 	int yCenter = 512;
-	int radius = yCenter;
-	if (xCenter > yCenter) {
-		radius = xCenter;
-	}
+	int radius = 300;
 	UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4);
+	updateUePositionHistory(ueContainer.getUes(), ueContainer.getUEPositionHistory(), 
+		ueContainer.getLoggingDistance());
 
-	double eNbTxPower = 46; //dbm
+	double eNbTxPower = 43; //dbm
 	Config::SetDefault("ns3::LteEnbPhy::TxPower", DoubleValue(eNbTxPower));
 
 	//setup the network
@@ -85,6 +118,10 @@ int main(int argc, char *argv[]) {
 	flowMonitor = flowHelper.InstallAll();
 
 	Simulator::Schedule(Seconds(0), &simulationCompletion, simulationTime);
+	for(double timer = 0; timer <= simulationTime; timer += 0.9){
+		Simulator::Schedule(Seconds(timer), updateUePositionHistory, ueContainer.getUes(),
+			ueContainer.getUEPositionHistory(), ueContainer.getLoggingDistance());
+	}
 	Simulator::Stop(Seconds(simulationTime));
 	std::cout << "simulation start" << std::endl;
 	Simulator::Run();

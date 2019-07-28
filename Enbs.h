@@ -16,6 +16,7 @@
 #include "../build/ns3/vector.h"
 #include "ns3/lte-module.h"
 #include "ns3/netanim-module.h"
+#include <cstdlib>
 
 namespace ns3 {
 class Enbs {
@@ -241,7 +242,8 @@ void Enbs::setNetAnimProperties(AnimationInterface* anim, int imageId) {
 		int nodeId = enbNodes.Get(i)->GetId();
 		anim->UpdateNodeImage(nodeId, imageId);
 		anim->UpdateNodeSize(nodeId, 15, 15);
-		anim->UpdateNodeDescription(enbNodes.Get(i), "Enb");
+		anim->UpdateNodeDescription(enbNodes.Get(i), 
+		  "Enb");
 	}
 	anim = 0;
 }

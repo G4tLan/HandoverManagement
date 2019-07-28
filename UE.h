@@ -27,6 +27,16 @@ public:
 	NodeContainer* getUes() {
 		return &UENodes;
 	}
+	struct historyPos {
+		Vector p1;
+		Vector p2;
+	};
+	std::map<uint32_t, UE::historyPos>* getUEPositionHistory() {
+		return &uePositionHistory;
+	}
+	double getLoggingDistance(){
+		return loggingDistance;
+	}
 private:
 	int numOfUEs;
 	NodeContainer UENodes;
@@ -36,10 +46,12 @@ private:
 	int xCenter;
 	int yCenter;
 	int radius;
+	double loggingDistance;
+	std::map<uint32_t, UE::historyPos> uePositionHistory;
 };
 
 UE::UE(int numberOfUes, int yPosition, int speedDifference) :
-		xCenter(0), yCenter(0), radius(0) {
+		xCenter(0), yCenter(0), radius(0), loggingDistance(30) {
 	numOfUEs = numberOfUes;
 	UENodes.Create(numberOfUes);
 
@@ -86,7 +98,6 @@ UE::UE(int numberOfUes, int xBound, int yBound, int _radius) {
 			StringValue(
 					"ns3::UniformRandomVariable[Min=5|Max="
 							+ std::to_string(_radius) + "]"));
-	//UeMobilityHelper.Install(UENodes);
 
 	xCenter = xBound;
 	yCenter = yBound;

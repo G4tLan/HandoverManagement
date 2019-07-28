@@ -80,10 +80,9 @@ void LteNetworkConfiguration::setUpLteHelperWithEpc() {
 	lteHelper = CreateObject<LteHelper>();
 	lteHelper->SetEpcHelper(epcHelper);
 	lteHelper->SetHandoverAlgorithmType ("ns3::algorithmAdam");
-	/*lteHelper->SetHandoverAlgorithmAttribute ("ServingCellThreshold",
-			UintegerValue (30));
-	lteHelper->SetHandoverAlgorithmAttribute ("NeighbourCellOffset",
-			UintegerValue (1));*/
+	Ptr<ns3::LogDistancePropagationLossModel> propModel = CreateObject<ns3::LogDistancePropagationLossModel>();
+
+	lteHelper->SetPathlossModelType(propModel->GetTypeId());
 	lteHelper->SetSchedulerType("ns3::RrFfMacScheduler");
 }
 
