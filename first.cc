@@ -60,6 +60,10 @@ void updateUePositionHistory(NodeContainer* UENodes,
 	uePositionHistory = NULL;
 }
 
+void accessPositions(std::string context, std::map<uint32_t, UE::historyPos> poses){
+	std::cout << "poses" << std::endl;
+}
+
 int main(int argc, char *argv[]) {
 	int numberOfEnbs = 11;
 	int numberOfUes = 1;
@@ -122,6 +126,7 @@ int main(int argc, char *argv[]) {
 		Simulator::Schedule(Seconds(timer), updateUePositionHistory, ueContainer.getUes(),
 			ueContainer.getUEPositionHistory(), ueContainer.getLoggingDistance());
 	}
+	Config::Connect("/ns3::UE/UEHistoryPositins", MakeCallback(&accessPositions));
 	Simulator::Stop(Seconds(simulationTime));
 	std::cout << "simulation start" << std::endl;
 	Simulator::Run();

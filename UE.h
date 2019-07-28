@@ -19,8 +19,21 @@
 #include <string>
 
 namespace ns3 {
-class UE {
+class UE: public Object 
+{
 public:
+	static TypeId GetTypeId (void) {
+		static TypeId tid = TypeId("UE")
+			.SetParent(Object::GetTypeId())
+			.SetGroupName("Lte")
+			.AddConstructor<UE>()
+			.AddTraceSource("UEHistoryPositions",
+				"the std::map<uint32_t, UE::historyPos>",
+				MakeTraceSourceAccessor(&UE::m_uePositionHistory),
+				"ns3::TracedValueCallback::std::map<uint32_t, UE::historyPos>");
+		return tid;
+	}
+	UE(){}
 	UE(int, int, int, int);
 	UE(int, int, int);
 	void setNetAnimProperties(AnimationInterface*, int);
@@ -32,11 +45,16 @@ public:
 		Vector p2;
 	};
 	std::map<uint32_t, UE::historyPos>* getUEPositionHistory() {
+		std::cout << "get ue ----->" << std::endl;
+		m_uePositionHistory(uePositionHistory);
 		return &uePositionHistory;
 	}
 	double getLoggingDistance(){
 		return loggingDistance;
 	}
+	//acessor template
+	typedef void (*ueHistoryPositionTraceCallBack)
+		(const std::map<uint32_t, UE::historyPos> historyPositions);
 private:
 	int numOfUEs;
 	NodeContainer UENodes;
@@ -48,6 +66,7 @@ private:
 	int radius;
 	double loggingDistance;
 	std::map<uint32_t, UE::historyPos> uePositionHistory;
+	ns3::TracedCallback<std::map<uint32_t, UE::historyPos>> m_uePositionHistory;
 };
 
 UE::UE(int numberOfUes, int yPosition, int speedDifference) :
@@ -149,6 +168,7 @@ void UE::setNetAnimProperties(AnimationInterface* anim, int imageId) {
 	}
 	anim = 0;
 }
+NS_OBJECT_ENSURE_REGISTERED(UE);
 }
 
 #endif /* SCRATCH_UE_H_ */
