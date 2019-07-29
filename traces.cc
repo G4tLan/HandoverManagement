@@ -73,7 +73,7 @@ main (int argc, char *argv[])
   Ptr<MyObject> myO1 = CreateObject<MyObject>(myObject1);
   myO->TraceConnectWithoutContext ("MyInteger", MakeCallback(&IntTrace));
   myO1->TraceConnectWithoutContext ("MyInteger", MakeCallback(&IntTrac));
-  Config::Connect("/MyObject" , MakeCallback(&IntTrace));
+  Config::Connect("MyObject" , MakeCallback(&IntTrace));
 
   myO->m_myInt = 1234;
   myO1->m_myInt = 1234;
