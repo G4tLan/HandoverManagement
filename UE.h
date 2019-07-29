@@ -18,43 +18,33 @@
 #include "ns3/netanim-module.h"
 #include <string>
 
-namespace ns3 {
-double calculateDistance(Vector p1, Vector p2){
-	double dist  = (p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y);
+namespace ns3
+{
+double calculateDistance(Vector p1, Vector p2)
+{
+	double dist = (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
 
 	return std::sqrt(dist);
 }
 
-class UE: public Object 
+class UE
 {
 public:
-	static TypeId GetTypeId (void) {
-		static TypeId tid = TypeId("UE")
-			.SetParent(Object::GetTypeId())
-			.SetGroupName("Lte")
-			.AddConstructor<UE>()
-			.AddTraceSource("UEHistoryPositions",
-				"the std::map<uint32_t, UE::historyPos>",
-				MakeTraceSourceAccessor(&UE::m_uePositionHistory),
-				"ns3::TracedValueCallback::std::map<uint32_t, UE::historyPos>");
-		return tid;
-	}
-	UE(){}
-	UE(int, int, int, int);
-	UE(int, int, int);
-	void setNetAnimProperties(AnimationInterface*, int);
-	NodeContainer* getUes() {
-		return &UENodes;
-	}
-	struct historyPos {
+	struct historyPos
+	{
 		Vector p1;
 		Vector p2;
 	};
+	static std::map<uint32_t, UE::historyPos> uePositionHistory;
+	UE(int, int, int, int, int);
+	void setNetAnimProperties(AnimationInterface *, int);
+	NodeContainer *getUes()
+	{
+		return &UENodes;
+	}
 
 	void updateUePositionHistory();
-	//acessor template
-	typedef void (*ueHistoryPositionTraceCallBack)
-		(const std::map<uint32_t, UE::historyPos> historyPositions);
+
 private:
 	int numOfUEs;
 	NodeContainer UENodes;
@@ -65,85 +55,67 @@ private:
 	int yCenter;
 	int radius;
 	double loggingDistance;
-	std::map<uint32_t, UE::historyPos> uePositionHistory;
-	ns3::TracedCallback<const std::map<uint32_t, UE::historyPos>> m_uePositionHistory;
+	int simulationTime;
 };
-NS_OBJECT_ENSURE_REGISTERED(UE);
+std::map<uint32_t, UE::historyPos> UE::uePositionHistory = {};
 
-void UE::updateUePositionHistory() {
+void UE::updateUePositionHistory()
+{
 	double currentTime = Simulator::Now().GetSeconds();
-	for (uint n = 0; n < UENodes.GetN(); n++) {
+	for (uint n = 0; n < UENodes.GetN(); n++)
+	{
 		Ptr<Node> node = UENodes.Get(n)->GetObject<Node>();
 		Ptr<MobilityModel> mob = UENodes.Get(n)->GetObject<MobilityModel>();
 		auto it = uePositionHistory.find(node->GetId());
 
-		if(it == uePositionHistory.end()){
+		if (it == uePositionHistory.end())
+		{
 			UE::historyPos historyP1P2;
 			historyP1P2.p1 = mob->GetPosition();
 			historyP1P2.p2 = mob->GetPosition();
 			uePositionHistory.insert(std::make_pair(node->GetId(), historyP1P2));
-		} else {
-			if(calculateDistance(mob->GetPosition(), it->second.p2) >= loggingDistance){
-				std::cout << "-----adding for node " << node->GetId() << " t " 
-					<< currentTime << std::endl;
+		}
+		else
+		{
+			if (calculateDistance(mob->GetPosition(), it->second.p2) >= loggingDistance)
+			{
+				std::cout << "-----adding for node " << node->GetId() << " t "
+						  << currentTime << std::endl;
 				it->second.p1 = it->second.p2;
 				it->second.p2 = mob->GetPosition();
 			}
 		}
 	}
-	m_uePositionHistory(uePositionHistory);
-	Simulator::Schedule(Seconds(currentTime + 0.4), &UE::updateUePositionHistory, this);
+	double t = currentTime + 0.4;
+	Simulator::Schedule(Seconds(t >= simulationTime ? simulationTime : t),
+						&UE::updateUePositionHistory, this);
 }
 
-UE::UE(int numberOfUes, int yPosition, int speedDifference) :
-		xCenter(0), yCenter(0), radius(0), loggingDistance(30) {
+UE::UE(int numberOfUes, int xBound, int yBound, int _radius, int _simulationTime) : loggingDistance(30)
+{
 	numOfUEs = numberOfUes;
-	UENodes.Create(numberOfUes);
-
-	Ptr<ListPositionAllocator> positionAlloc = CreateObject<
-			ListPositionAllocator>();
-	for (int i = 0; i < numberOfUes; i++) {
-		positionAlloc->Add(Vector(-50, yPosition, 0));
-	}
-
-	UeMobilityHelper.SetPositionAllocator(positionAlloc);
-	UeMobilityHelper.SetMobilityModel("ns3::ConstantVelocityMobilityModel");
-	UeMobilityHelper.Install(UENodes);
-	int minimumSpeed = 10; //m/s
-	for (uint n = 0; n < UENodes.GetN(); n++) {
-		Ptr<ConstantVelocityMobilityModel> mob  =
-				UENodes.Get(n)->GetObject<ConstantVelocityMobilityModel>();
-		mob->SetVelocity(Vector(minimumSpeed + n * speedDifference, 0, 0));
-	}
-}
-
-UE::UE(int numberOfUes, int xBound, int yBound, int _radius) :
-	loggingDistance(30) {
-	numOfUEs = numberOfUes;
+	simulationTime = _simulationTime;
 	UENodes.Create(numberOfUes);
 
 	UeMobilityHelper.SetPositionAllocator("ns3::RandomDiscPositionAllocator",
-			"X", StringValue(std::to_string(xBound)), "Y",
-			StringValue(std::to_string(yBound)), "Rho",
-			StringValue(
-					"ns3::UniformRandomVariable[Min=5|Max="
-							+ std::to_string(_radius) + "]"));
+										  "X", StringValue(std::to_string(xBound)), "Y",
+										  StringValue(std::to_string(yBound)), "Rho",
+										  StringValue(
+											  "ns3::UniformRandomVariable[Min=5|Max=" + std::to_string(_radius) + "]"));
 
 	UeMobilityHelper60Kmh.SetPositionAllocator(
-			"ns3::RandomDiscPositionAllocator", "X",
-			StringValue(std::to_string(xBound)), "Y",
-			StringValue(std::to_string(yBound)), "Rho",
-			StringValue(
-					"ns3::UniformRandomVariable[Min=5|Max="
-							+ std::to_string(_radius) + "]"));
+		"ns3::RandomDiscPositionAllocator", "X",
+		StringValue(std::to_string(xBound)), "Y",
+		StringValue(std::to_string(yBound)), "Rho",
+		StringValue(
+			"ns3::UniformRandomVariable[Min=5|Max=" + std::to_string(_radius) + "]"));
 
 	UeMobilityHelper120Kmh.SetPositionAllocator(
-			"ns3::RandomDiscPositionAllocator", "X",
-			StringValue(std::to_string(xBound)), "Y",
-			StringValue(std::to_string(yBound)), "Rho",
-			StringValue(
-					"ns3::UniformRandomVariable[Min=5|Max="
-							+ std::to_string(_radius) + "]"));
+		"ns3::RandomDiscPositionAllocator", "X",
+		StringValue(std::to_string(xBound)), "Y",
+		StringValue(std::to_string(yBound)), "Rho",
+		StringValue(
+			"ns3::UniformRandomVariable[Min=5|Max=" + std::to_string(_radius) + "]"));
 
 	xCenter = xBound;
 	yCenter = yBound;
@@ -154,41 +126,49 @@ UE::UE(int numberOfUes, int xBound, int yBound, int _radius) :
 	int ymin = yCenter - radius;
 	int ymax = yCenter + radius;
 	UeMobilityHelper.SetMobilityModel("ns3::RandomWalk2dMobilityModel", "Mode",
-			StringValue("Time"), "Time", StringValue("5s"), "Speed",
-			StringValue("ns3::ConstantRandomVariable[Constant=2.0]"), "Bounds",
-			RectangleValue(Rectangle(xmin, xmax, ymin, ymax)));
+									  StringValue("Time"), "Time", StringValue("5s"), "Speed",
+									  StringValue("ns3::ConstantRandomVariable[Constant=2.0]"), "Bounds",
+									  RectangleValue(Rectangle(xmin, xmax, ymin, ymax)));
 
 	UeMobilityHelper60Kmh.SetMobilityModel(
-			"ns3::RandomDirection2dMobilityModel", "Bounds",
-			RectangleValue(Rectangle(xmin, xmax, ymin, ymax)), "Speed",
-			StringValue("ns3::ConstantRandomVariable[Constant=17]"), "Pause",
-			StringValue("ns3::ConstantRandomVariable[Constant=0.2]"));
+		"ns3::RandomDirection2dMobilityModel", "Bounds",
+		RectangleValue(Rectangle(xmin, xmax, ymin, ymax)), "Speed",
+		StringValue("ns3::ConstantRandomVariable[Constant=17]"), "Pause",
+		StringValue("ns3::ConstantRandomVariable[Constant=0.2]"));
 
 	UeMobilityHelper120Kmh.SetMobilityModel(
-			"ns3::RandomDirection2dMobilityModel", "Bounds",
-			RectangleValue(Rectangle(xmin, xmax, ymin, ymax)), "Speed",
-			StringValue("ns3::ConstantRandomVariable[Constant=36]"), "Pause",
-			StringValue("ns3::ConstantRandomVariable[Constant=0.2]"));
+		"ns3::RandomDirection2dMobilityModel", "Bounds",
+		RectangleValue(Rectangle(xmin, xmax, ymin, ymax)), "Speed",
+		StringValue("ns3::ConstantRandomVariable[Constant=36]"), "Pause",
+		StringValue("ns3::ConstantRandomVariable[Constant=0.2]"));
 
 	int numOfRandomUEs = 0.6 * numberOfUes;
 	int numOf60KMpHUEs = 0.55 * numberOfUes; //17 m/s
 	//int numOf120KMpHUEs = 0.05 * numberOfUes; //36 m/s
 
-	for (int i = 0; i < numberOfUes; i++) {
+	for (int i = 0; i < numberOfUes; i++)
+	{
 		//
-		if (i + 1 <= numOfRandomUEs) {
+		if (i + 1 <= numOfRandomUEs)
+		{
 			UeMobilityHelper.Install(UENodes.Get(i));
-		} else if (i + 1 <= numOfRandomUEs + numOf60KMpHUEs) {
+		}
+		else if (i + 1 <= numOfRandomUEs + numOf60KMpHUEs)
+		{
 			UeMobilityHelper60Kmh.Install(UENodes.Get(i));
-		} else if (i + 1 <= numberOfUes) {
+		}
+		else if (i + 1 <= numberOfUes)
+		{
 			UeMobilityHelper120Kmh.Install(UENodes.Get(i));
 		}
 	}
 	updateUePositionHistory();
 }
 
-void UE::setNetAnimProperties(AnimationInterface* anim, int imageId) {
-	for (int i = 0; i < numOfUEs; i++) {
+void UE::setNetAnimProperties(AnimationInterface *anim, int imageId)
+{
+	for (int i = 0; i < numOfUEs; i++)
+	{
 		int nodeId = UENodes.Get(i)->GetId();
 		anim->UpdateNodeImage(nodeId, imageId);
 		anim->UpdateNodeSize(nodeId, 10, 10);
@@ -196,6 +176,6 @@ void UE::setNetAnimProperties(AnimationInterface* anim, int imageId) {
 	}
 	anim = 0;
 }
-}
+} // namespace ns3
 
 #endif /* SCRATCH_UE_H_ */

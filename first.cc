@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
 	int xCenter = 512;
 	int yCenter = 512;
 	int radius = 300;
-	UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4);
+	UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4,simulationTime);
 
 	double eNbTxPower = 43; //dbm
 	Config::SetDefault("ns3::LteEnbPhy::TxPower", DoubleValue(eNbTxPower));
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
 	flowMonitor = flowHelper.InstallAll();
 
 	Simulator::Schedule(Seconds(0), &simulationCompletion, simulationTime);
-	ueContainer.TraceConnectWithoutContext("UEHistoryPositions", MakeCallback(&accessPositions));
+	//ueContainer.TraceConnectWithoutContext("UEHistoryPositions", MakeCallback(&accessPositions));
 	Simulator::Stop(Seconds(simulationTime));
 	std::cout << "simulation start" << std::endl;
 	Simulator::Run();
