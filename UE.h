@@ -19,6 +19,12 @@
 #include <string>
 
 namespace ns3 {
+double calculateDistance(Vector p1, Vector p2){
+	double dist  = (p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y);
+
+	return std::sqrt(dist);
+}
+
 class UE: public Object 
 {
 public:
@@ -44,14 +50,8 @@ public:
 		Vector p1;
 		Vector p2;
 	};
-	std::map<uint32_t, UE::historyPos>* getUEPositionHistory() {
-		std::cout << "get ue ----->" << std::endl;
-		m_uePositionHistory(uePositionHistory);
-		return &uePositionHistory;
-	}
-	double getLoggingDistance(){
-		return loggingDistance;
-	}
+
+	void updateUePositionHistory();
 	//acessor template
 	typedef void (*ueHistoryPositionTraceCallBack)
 		(const std::map<uint32_t, UE::historyPos> historyPositions);
@@ -66,8 +66,34 @@ private:
 	int radius;
 	double loggingDistance;
 	std::map<uint32_t, UE::historyPos> uePositionHistory;
-	ns3::TracedCallback<std::map<uint32_t, UE::historyPos>> m_uePositionHistory;
+	ns3::TracedCallback<const std::map<uint32_t, UE::historyPos>> m_uePositionHistory;
 };
+NS_OBJECT_ENSURE_REGISTERED(UE);
+
+void UE::updateUePositionHistory() {
+	double currentTime = Simulator::Now().GetSeconds();
+	for (uint n = 0; n < UENodes.GetN(); n++) {
+		Ptr<Node> node = UENodes.Get(n)->GetObject<Node>();
+		Ptr<MobilityModel> mob = UENodes.Get(n)->GetObject<MobilityModel>();
+		auto it = uePositionHistory.find(node->GetId());
+
+		if(it == uePositionHistory.end()){
+			UE::historyPos historyP1P2;
+			historyP1P2.p1 = mob->GetPosition();
+			historyP1P2.p2 = mob->GetPosition();
+			uePositionHistory.insert(std::make_pair(node->GetId(), historyP1P2));
+		} else {
+			if(calculateDistance(mob->GetPosition(), it->second.p2) >= loggingDistance){
+				std::cout << "-----adding for node " << node->GetId() << " t " 
+					<< currentTime << std::endl;
+				it->second.p1 = it->second.p2;
+				it->second.p2 = mob->GetPosition();
+			}
+		}
+	}
+	m_uePositionHistory(uePositionHistory);
+	Simulator::Schedule(Seconds(currentTime + 0.4), &UE::updateUePositionHistory, this);
+}
 
 UE::UE(int numberOfUes, int yPosition, int speedDifference) :
 		xCenter(0), yCenter(0), radius(0), loggingDistance(30) {
@@ -91,7 +117,8 @@ UE::UE(int numberOfUes, int yPosition, int speedDifference) :
 	}
 }
 
-UE::UE(int numberOfUes, int xBound, int yBound, int _radius) {
+UE::UE(int numberOfUes, int xBound, int yBound, int _radius) :
+	loggingDistance(30) {
 	numOfUEs = numberOfUes;
 	UENodes.Create(numberOfUes);
 
@@ -157,6 +184,7 @@ UE::UE(int numberOfUes, int xBound, int yBound, int _radius) {
 			UeMobilityHelper120Kmh.Install(UENodes.Get(i));
 		}
 	}
+	updateUePositionHistory();
 }
 
 void UE::setNetAnimProperties(AnimationInterface* anim, int imageId) {
@@ -168,7 +196,6 @@ void UE::setNetAnimProperties(AnimationInterface* anim, int imageId) {
 	}
 	anim = 0;
 }
-NS_OBJECT_ENSURE_REGISTERED(UE);
 }
 
 #endif /* SCRATCH_UE_H_ */
