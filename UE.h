@@ -35,7 +35,8 @@ public:
 		Vector p1;
 		Vector p2;
 	};
-	static std::map<uint32_t, UE::historyPos> uePositionHistory;
+	//uses rnti and cellid in that order as key
+	static std::map<std::pair<uint32_t, uint32_t>, UE::historyPos> uePositionHistory;
 	UE(int, int, int, int, int);
 	void setNetAnimProperties(AnimationInterface *, int);
 	NodeContainer *getUes()
@@ -57,7 +58,7 @@ private:
 	double loggingDistance;
 	int simulationTime;
 };
-std::map<uint32_t, UE::historyPos> UE::uePositionHistory = {};
+std::map<std::pair<uint32_t, uint32_t>, UE::historyPos> UE::uePositionHistory = {};
 
 void UE::updateUePositionHistory()
 {
@@ -65,24 +66,25 @@ void UE::updateUePositionHistory()
 	for (uint n = 0; n < UENodes.GetN(); n++)
 	{
 		Ptr<Node> node = UENodes.Get(n)->GetObject<Node>();
-		uint64_t imsi = 0;
+		ns3::Ptr<ns3::LteUeRrc> rrc = 0;
 		for(uint32_t devs = 0; devs < UENodes.Get(n)->GetNDevices(); devs++){
 			Ptr<LteUeNetDevice> ueNetDev = UENodes.Get(n)->GetDevice(devs)->
 				GetObject<LteUeNetDevice>();
 			if(ueNetDev != 0){
-				auto rrc = ueNetDev->GetRrc();
-				imsi = rrc->GetImsi();
+				rrc = ueNetDev->GetRrc();
 			}
 		}
 		Ptr<MobilityModel> mob = UENodes.Get(n)->GetObject<MobilityModel>();
-		auto it = uePositionHistory.find(imsi);
+		auto it = uePositionHistory.find(std::make_pair(rrc->GetRnti(), rrc->GetCellId()));
 
 		if (it == uePositionHistory.end())
 		{
 			UE::historyPos historyP1P2;
 			historyP1P2.p1 = mob->GetPosition();
 			historyP1P2.p2 = mob->GetPosition();
-			uePositionHistory.insert(std::make_pair(imsi, historyP1P2));
+			 std::cout <<"[" << rrc->GetRnti() << " , " << rrc->GetCellId() << "]" << std::endl;
+			uePositionHistory.insert(std::make_pair(
+				std::make_pair(rrc->GetRnti(), rrc->GetCellId()), historyP1P2));
 		}
 		else
 		{
