@@ -71,6 +71,7 @@ int main(int argc, char *argv[]) {
 	lteNetwork.connectUeToNearestEnb(&ueLteDevs, &enbLteDevs);
 	lteNetwork.startApps(ueContainer.getUes(), &ueLteDevs);
 	lteNetwork.setupTraces();
+	//ueContainer.updateUePositionHistory();
 
 
 	//Setup netAnim settings

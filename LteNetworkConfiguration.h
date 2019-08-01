@@ -219,7 +219,6 @@ void LteNetworkConfiguration::setupTraces(){
 	lteHelper->EnableRlcTraces ();
 	lteHelper->EnablePdcpTraces ();
 }
-
 }
 
 #endif /* SCRATCH_LTENETWORKCONFIGURATION_H_ */

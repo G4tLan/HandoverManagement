@@ -65,22 +65,29 @@ void UE::updateUePositionHistory()
 	for (uint n = 0; n < UENodes.GetN(); n++)
 	{
 		Ptr<Node> node = UENodes.Get(n)->GetObject<Node>();
+		uint64_t imsi = 0;
+		for(uint32_t devs = 0; devs < UENodes.Get(n)->GetNDevices(); devs++){
+			Ptr<LteUeNetDevice> ueNetDev = UENodes.Get(n)->GetDevice(devs)->
+				GetObject<LteUeNetDevice>();
+			if(ueNetDev != 0){
+				auto rrc = ueNetDev->GetRrc();
+				imsi = rrc->GetImsi();
+			}
+		}
 		Ptr<MobilityModel> mob = UENodes.Get(n)->GetObject<MobilityModel>();
-		auto it = uePositionHistory.find(node->GetId());
+		auto it = uePositionHistory.find(imsi);
 
 		if (it == uePositionHistory.end())
 		{
 			UE::historyPos historyP1P2;
 			historyP1P2.p1 = mob->GetPosition();
 			historyP1P2.p2 = mob->GetPosition();
-			uePositionHistory.insert(std::make_pair(node->GetId(), historyP1P2));
+			uePositionHistory.insert(std::make_pair(imsi, historyP1P2));
 		}
 		else
 		{
 			if (calculateDistance(mob->GetPosition(), it->second.p2) >= loggingDistance)
 			{
-				std::cout << "-----adding for node " << node->GetId() << " t "
-						  << currentTime << std::endl;
 				it->second.p1 = it->second.p2;
 				it->second.p2 = mob->GetPosition();
 			}
@@ -162,7 +169,9 @@ UE::UE(int numberOfUes, int xBound, int yBound, int _radius, int _simulationTime
 			UeMobilityHelper120Kmh.Install(UENodes.Get(i));
 		}
 	}
-	updateUePositionHistory();
+	//updateUePositionHistory();
+	Simulator::Schedule(Seconds(1),
+						&UE::updateUePositionHistory, this);
 }
 
 void UE::setNetAnimProperties(AnimationInterface *anim, int imageId)
