@@ -80,6 +80,7 @@ void LteNetworkConfiguration::setUpLteHelperWithEpc() {
 	lteHelper = CreateObject<LteHelper>();
 	lteHelper->SetEpcHelper(epcHelper);
 	lteHelper->SetHandoverAlgorithmType ("ns3::algorithmAdam");
+	lteHelper->SetAttribute ("UseIdealRrc", BooleanValue (true));
 	Ptr<ns3::LogDistancePropagationLossModel> propModel = CreateObject<ns3::LogDistancePropagationLossModel>();
 
 	lteHelper->SetPathlossModelType(propModel->GetTypeId());
