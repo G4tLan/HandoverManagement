@@ -41,6 +41,10 @@ public:
 	int GetNumOfRows() {
 		return numOfEnbRows;
 	}
+	static std::map<uint32_t, ns3::Vector> enbPositions;
+	void populatePositions();
+	static std::map<uint32_t, std::vector<uint32_t>> enbNeighbours;
+	void populateNeighbours();
 private:
 	NodeContainer enbNodes;
 	MobilityHelper enbMobility;
@@ -63,6 +67,66 @@ private:
 	void ConnectClosestEnbX2InterfaceHex(Ptr<LteHelper>);
 	void ConnectClosestEnbX2InterfaceStraight(Ptr<LteHelper>);
 };
+
+std::map<uint32_t, std::vector<uint32_t>> Enbs::enbNeighbours = {};
+
+void Enbs::populateNeighbours()
+{
+	std::cout << "[" << std::endl;
+	for (uint32_t i = 0; i < enbNodes.GetN(); i++)
+	{
+		Ptr<Node> n = enbNodes.Get(i);
+		Ptr<ns3::LteEnbNetDevice> netD = n->GetDevice(0)->GetObject<LteEnbNetDevice>();
+
+		if (netD != 0)
+		{
+			std::vector<uint32_t> neighbs;
+			uint32_t cellId = (uint32_t)netD->GetCellId();
+
+			for(auto it = pairs.begin(); it != pairs.end(); it++){
+				if(it->node1Index == (int)i){
+					neighbs.push_back(enbNodes.Get(it->node2Index)->GetDevice(0)
+					->GetObject<ns3::LteEnbNetDevice>()
+						->GetCellId());
+				} else if(it->node2Index == (int)i) {
+					neighbs.push_back(enbNodes.Get(it->node1Index)->GetDevice(0)
+					->GetObject<ns3::LteEnbNetDevice>()
+						->GetCellId());
+				}
+				if(neighbs.size() >= 6){
+					break;
+				}
+			}
+
+			enbNeighbours.insert(std::make_pair(cellId, neighbs));
+			std::cout << "{ \n \t p: " << cellId << "\n \t n: [";
+			for(auto ns = neighbs.begin(); ns != neighbs.end(); ns++){
+				std::cout << *ns << " ";
+			}
+			std::cout << "] \n }," << std::endl;
+		}
+	}
+	std::cout << "]" << std::endl;
+}
+
+std::map<uint32_t, ns3::Vector> Enbs::enbPositions = {};
+
+void Enbs::populatePositions(){
+	std::cout << "[" << std::endl;
+	for(uint32_t i = 0; i < enbNodes.GetN(); i++){
+		Ptr<ns3::LteEnbNetDevice> rrc = enbNodes.Get(i)->GetDevice(0)->GetObject<ns3::LteEnbNetDevice>();
+		Ptr<ns3::MobilityModel> mob = enbNodes.Get(i)->GetObject<ns3::MobilityModel>();
+
+		if(rrc != 0 && mob != 0){
+			uint32_t cellId = (uint32_t) rrc->GetCellId();
+			Vector position = mob->GetPosition();
+			std::cout << "{ id: " << cellId << " , " << position << "}," << std::endl;
+
+			enbPositions.insert(std::make_pair(cellId, position));
+		}
+	}
+	std::cout << "]" << std::endl;
+}
 
 Enbs::Enbs(int numOfEnbs, int distance, Enbs::Position_Types p) {
 	enbNodes.Create(numOfEnbs);

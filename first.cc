@@ -31,9 +31,9 @@ void accessPositions(std::string context, const std::map<uint32_t, UE::historyPo
 }
 
 int main(int argc, char *argv[]) {
-	int numberOfEnbs = 11;
+	int numberOfEnbs = 5;
 	int numberOfUes = 1;
-	int distance = 200; //m
+	int distance = 300; //m
 	Enbs::Position_Types type = Enbs::HEX_MATRIX;
 	double simulationTime = 20;
 
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
 	//UE ueContainer(numberOfUes, 20, 20); //different speeds
 	int xCenter = 512;
 	int yCenter = 512;
-	int radius = 300;
+	int radius = 300; //change on the algorithm as well
 	UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4,simulationTime);
 
 	double eNbTxPower = 43; //dbm
@@ -73,6 +73,8 @@ int main(int argc, char *argv[]) {
 	lteNetwork.setupTraces();
 	//ueContainer.updateUePositionHistory();
 
+	enbContainer.populateNeighbours();
+	enbContainer.populatePositions();
 
 	//Setup netAnim settings
 	AnimationInterface anim("./scratch/animation-simulation.xml");
