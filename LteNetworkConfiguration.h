@@ -59,7 +59,6 @@ private:
 
 LteNetworkConfiguration::LteNetworkConfiguration() {
 	Config::SetDefault ("ns3::UdpClient::Interval", TimeValue (MilliSeconds (10)));
-	Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (false));
 	//must follow this order
 	setUpEpc();
 	setUpLteHelperWithEpc();
@@ -81,10 +80,22 @@ void LteNetworkConfiguration::setUpLteHelperWithEpc() {
 	lteHelper->SetEpcHelper(epcHelper);
 	lteHelper->SetHandoverAlgorithmType ("ns3::algorithmAdam");
 	lteHelper->SetAttribute ("UseIdealRrc", BooleanValue (true));
+	
 	Ptr<ns3::LogDistancePropagationLossModel> propModel = CreateObject<ns3::LogDistancePropagationLossModel>();
-
 	lteHelper->SetPathlossModelType(propModel->GetTypeId());
+	lteHelper->SetPathlossModelAttribute("Exponent", DoubleValue(3.76));
+	lteHelper->SetPathlossModelAttribute("ReferenceDistance", DoubleValue(1000)); //m
+	lteHelper->SetPathlossModelAttribute("ReferenceLoss", DoubleValue(100)); //db
+	/*
+	lteHelper->SetFadingModel("ns3::TraceFadingLossModel");
+	lteHelper->SetFadingModelAttribute ("TraceFilename", StringValue ("./fading_traces.fad"));
+	lteHelper->SetFadingModelAttribute ("TraceLength", TimeValue (Seconds (10.0)));
+	lteHelper->SetFadingModelAttribute ("SamplesNum", UintegerValue (10000));
+	lteHelper->SetFadingModelAttribute ("WindowSize", TimeValue (Seconds (0.5)));
+	lteHelper->SetFadingModelAttribute ("RbNum", UintegerValue (100));
+	*/
 	lteHelper->SetSchedulerType("ns3::RrFfMacScheduler");
+	lteHelper->SetSchedulerAttribute("CqiTimerThreshold", UintegerValue(1)); //ms
 }
 
 void LteNetworkConfiguration::setUpEpc() {

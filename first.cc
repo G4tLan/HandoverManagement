@@ -31,9 +31,9 @@ void accessPositions(std::string context, const std::map<uint32_t, UE::historyPo
 }
 
 int main(int argc, char *argv[]) {
-	int numberOfEnbs = 5;
-	int numberOfUes = 1;
-	int distance = 300; //m
+	int numberOfEnbs = 7;
+	int numberOfUes = 10;
+	int distance = 1000; //m
 	Enbs::Position_Types type = Enbs::HEX_MATRIX;
 	double simulationTime = 20;
 
@@ -78,6 +78,7 @@ int main(int argc, char *argv[]) {
 
 	//Setup netAnim settings
 	AnimationInterface anim("./scratch/animation-simulation.xml");
+	anim.SetMaxPktsPerTraceFile(300000);
 	int UEImageId = anim.AddResource("./scratch/UE.png");
 	int ENBImageId = anim.AddResource("./scratch/ENB.png");
 	enbContainer.setNetAnimProperties(&anim, ENBImageId);
