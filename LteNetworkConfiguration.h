@@ -59,6 +59,7 @@ private:
 
 LteNetworkConfiguration::LteNetworkConfiguration() {
 	Config::SetDefault ("ns3::UdpClient::Interval", TimeValue (MilliSeconds (10)));
+	Config::SetDefault("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue(320) );
 	//must follow this order
 	setUpEpc();
 	setUpLteHelperWithEpc();
@@ -85,7 +86,7 @@ void LteNetworkConfiguration::setUpLteHelperWithEpc() {
 	lteHelper->SetPathlossModelType(propModel->GetTypeId());
 	lteHelper->SetPathlossModelAttribute("Exponent", DoubleValue(3.76));
 	lteHelper->SetPathlossModelAttribute("ReferenceDistance", DoubleValue(1000)); //m
-	lteHelper->SetPathlossModelAttribute("ReferenceLoss", DoubleValue(100)); //db
+	lteHelper->SetPathlossModelAttribute("ReferenceLoss", DoubleValue(112.8)); //db
 	/*
 	lteHelper->SetFadingModel("ns3::TraceFadingLossModel");
 	lteHelper->SetFadingModelAttribute ("TraceFilename", StringValue ("./fading_traces.fad"));
@@ -96,6 +97,7 @@ void LteNetworkConfiguration::setUpLteHelperWithEpc() {
 	*/
 	lteHelper->SetSchedulerType("ns3::RrFfMacScheduler");
 	lteHelper->SetSchedulerAttribute("CqiTimerThreshold", UintegerValue(1)); //ms
+
 }
 
 void LteNetworkConfiguration::setUpEpc() {

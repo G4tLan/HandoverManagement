@@ -32,7 +32,7 @@ void accessPositions(std::string context, const std::map<uint32_t, UE::historyPo
 
 int main(int argc, char *argv[]) {
 	int numberOfEnbs = 7;
-	int numberOfUes = 10;
+	int numberOfUes = 1;
 	int distance = 1000; //m
 	Enbs::Position_Types type = Enbs::HEX_MATRIX;
 	double simulationTime = 20;
