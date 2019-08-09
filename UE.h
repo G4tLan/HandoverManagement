@@ -16,6 +16,7 @@
 #include "../build/ns3/vector.h"
 #include "ns3/lte-module.h"
 #include "ns3/netanim-module.h"
+#include <ns3/constant-velocity-mobility-model.h>
 #include <string>
 
 namespace ns3
@@ -38,6 +39,7 @@ public:
 	//uses rnti and cellid in that order as key
 	static std::map<std::pair<uint32_t, uint32_t>, UE::historyPos> uePositionHistory;
 	UE(int, int, int, int, int);
+	UE(int,int,int,int);//for testing
 	void setNetAnimProperties(AnimationInterface *, int);
 	NodeContainer *getUes()
 	{
@@ -98,6 +100,33 @@ void UE::updateUePositionHistory()
 	double t = currentTime + 0.4;
 	Simulator::Schedule(Seconds(t >= simulationTime ? simulationTime : t),
 						&UE::updateUePositionHistory, this);
+}
+
+UE::UE(int numberOfUes, int xBound, int yBound, int _simulationTime):
+xCenter(0), yCenter(0), radius(0), loggingDistance(30) {
+	numOfUEs = numberOfUes;
+	UENodes.Create(numberOfUes);
+
+	Ptr<ListPositionAllocator> positionAlloc = CreateObject<
+			ListPositionAllocator>();
+	for (int i = 0; i < numberOfUes; i++) {
+		positionAlloc->Add(Vector(xBound, yBound, 0));
+	}
+
+	UeMobilityHelper.SetPositionAllocator(positionAlloc);
+	UeMobilityHelper.SetMobilityModel("ns3::ConstantVelocityMobilityModel");
+	UeMobilityHelper.Install(UENodes);
+	
+	for (uint n = 0; n < UENodes.GetN(); n++) {
+		Ptr<ConstantVelocityMobilityModel> mob  =
+				UENodes.Get(n)->GetObject<ConstantVelocityMobilityModel>();
+		//mob->SetVelocity(Vector(10, 0, 0));
+		if(mob != 0)
+		mob->SetVelocity(Vector(10,0,0));
+	}
+
+	Simulator::Schedule(Seconds(1),
+					&UE::updateUePositionHistory, this);
 }
 
 UE::UE(int numberOfUes, int xBound, int yBound, int _radius, int _simulationTime) : loggingDistance(30)

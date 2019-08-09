@@ -50,8 +50,9 @@ int main(int argc, char *argv[]) {
 	//UE ueContainer(numberOfUes, 20, 20); //different speeds
 	int xCenter = 512;
 	int yCenter = 512;
-	int radius = 300; //change on the algorithm as well
-	UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4,simulationTime);
+	//int radius = 300; //change on the algorithm as well
+	//UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4,simulationTime);
+	UE ueContainer(numberOfUes,xCenter,yCenter,simulationTime);
 
 	double eNbTxPower = 43; //dbm
 	Config::SetDefault("ns3::LteEnbPhy::TxPower", DoubleValue(eNbTxPower));
