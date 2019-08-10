@@ -122,7 +122,7 @@ xCenter(0), yCenter(0), radius(0), loggingDistance(30) {
 				UENodes.Get(n)->GetObject<ConstantVelocityMobilityModel>();
 		//mob->SetVelocity(Vector(10, 0, 0));
 		if(mob != 0)
-		mob->SetVelocity(Vector(10,0,0));
+		mob->SetVelocity(Vector(55,0,0));
 	}
 
 	Simulator::Schedule(Seconds(1),

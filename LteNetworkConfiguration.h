@@ -86,7 +86,7 @@ void LteNetworkConfiguration::setUpLteHelperWithEpc() {
 	lteHelper->SetPathlossModelType(propModel->GetTypeId());
 	lteHelper->SetPathlossModelAttribute("Exponent", DoubleValue(3.76));
 	lteHelper->SetPathlossModelAttribute("ReferenceDistance", DoubleValue(1000)); //m
-	lteHelper->SetPathlossModelAttribute("ReferenceLoss", DoubleValue(112.8)); //db
+	lteHelper->SetPathlossModelAttribute("ReferenceLoss", DoubleValue(128.1)); //db
 	/*
 	lteHelper->SetFadingModel("ns3::TraceFadingLossModel");
 	lteHelper->SetFadingModelAttribute ("TraceFilename", StringValue ("./fading_traces.fad"));
