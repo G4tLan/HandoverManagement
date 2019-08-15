@@ -58,7 +58,7 @@ private:
 };
 
 LteNetworkConfiguration::LteNetworkConfiguration() {
-	Config::SetDefault ("ns3::UdpClient::Interval", TimeValue (MilliSeconds (10)));
+	//Config::SetDefault ("ns3::UdpClient::Interval", TimeValue (MilliSeconds (10)));
 	Config::SetDefault("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue(320) );
 	//must follow this order
 	setUpEpc();
@@ -80,6 +80,8 @@ void LteNetworkConfiguration::setUpLteHelperWithEpc() {
 	lteHelper = CreateObject<LteHelper>();
 	lteHelper->SetEpcHelper(epcHelper);
 	lteHelper->SetHandoverAlgorithmType ("ns3::algorithmAdam");
+	// lteHelper->SetHandoverAlgorithmType ("ns3::A2A4RsrqHandoverAlgorithm");
+	// lteHelper->SetHandoverAlgorithmType ("ns3::A3RsrpHandoverAlgorithm");
 	lteHelper->SetAttribute ("UseIdealRrc", BooleanValue (true));
 	
 	Ptr<ns3::LogDistancePropagationLossModel> propModel = CreateObject<ns3::LogDistancePropagationLossModel>();

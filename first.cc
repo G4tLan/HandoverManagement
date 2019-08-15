@@ -5,6 +5,9 @@
 #include "LteNetworkConfiguration.h"
 #include "UE.h"
 #include "ns3/flow-monitor-module.h"
+#include <time.h>
+
+//https://gitlab.cc-asp.fraunhofer.de/elena-ns3-lte/elena/tree/master ELENA
 
 using namespace ns3;
 
@@ -18,10 +21,13 @@ NS_LOG_COMPONENT_DEFINE("LenaX2HandoverMeasures");
  * the 'target' eNB when it considers it is a better eNB.
  */
 
+time_t start = time(0);
+
 void simulationCompletion(double totalSimTime ) {
 	ns3::Time currentTime = Simulator::Now();
+	double percentage = currentTime.GetMilliSeconds()/(totalSimTime*10);
 	std::cout << "simulation completion "
-	 << currentTime.GetMilliSeconds()/(totalSimTime*10) << "%" << std::endl;
+	 << percentage << "% estimated time " << (100.0/percentage) * difftime(time(0), start) << std::endl;
 	Simulator::Schedule(Seconds(currentTime.GetMilliSeconds()/1000.0 + 0.5), 
 	&simulationCompletion, totalSimTime);
 }
@@ -32,8 +38,8 @@ void accessPositions(std::string context, const std::map<uint32_t, UE::historyPo
 
 int main(int argc, char *argv[]) {
 	int numberOfEnbs = 7;
-	int numberOfUes = 1;
-	int distance = 1000; //m
+	int numberOfUes = 10;
+	int distance = 500; //m  sqrt(3) * radius/2
 	Enbs::Position_Types type = Enbs::HEX_MATRIX;
 	double simulationTime = 20;
 
@@ -47,12 +53,11 @@ int main(int argc, char *argv[]) {
 	cmd.Parse(argc, argv);
 
 	Enbs enbContainer(numberOfEnbs, distance, type);
-	//UE ueContainer(numberOfUes, 20, 20); //different speeds
 	int xCenter = 512;
 	int yCenter = 512;
-	//int radius = 300; //change on the algorithm as well
-	//UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4,simulationTime);
-	UE ueContainer(numberOfUes,xCenter,yCenter,simulationTime);
+	int radius = 500; //change on the algorithm as well
+	UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4,simulationTime);
+	//UE ueContainer(numberOfUes,xCenter,yCenter,simulationTime);
 
 	double eNbTxPower = 43; //dbm
 	Config::SetDefault("ns3::LteEnbPhy::TxPower", DoubleValue(eNbTxPower));
