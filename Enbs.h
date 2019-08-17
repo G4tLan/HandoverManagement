@@ -305,7 +305,7 @@ void Enbs::setNetAnimProperties(AnimationInterface* anim, int imageId) {
 	for (int i = 0; i < numOfEnb; i++) {
 		int nodeId = enbNodes.Get(i)->GetId();
 		anim->UpdateNodeImage(nodeId, imageId);
-		anim->UpdateNodeSize(nodeId, 15, 15);
+		anim->UpdateNodeSize(nodeId, 25, 25);
 		anim->UpdateNodeDescription(enbNodes.Get(i), 
 		  "Enb");
 	}

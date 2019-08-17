@@ -37,7 +37,7 @@ public:
 		Vector p2;
 	};
 	//uses rnti and cellid in that order as key
-	static std::map<std::pair<uint32_t, uint32_t>, UE::historyPos> uePositionHistory;
+	static std::map< uint64_t, UE::historyPos> uePositionHistory;
 	UE(int, int, int, int, int);
 	UE(int,int,int,int);//for testing
 	void setNetAnimProperties(AnimationInterface *, int);
@@ -60,7 +60,7 @@ private:
 	double loggingDistance;
 	int simulationTime;
 };
-std::map<std::pair<uint32_t, uint32_t>, UE::historyPos> UE::uePositionHistory = {};
+std::map<uint64_t, UE::historyPos> UE::uePositionHistory = {};
 
 void UE::updateUePositionHistory()
 {
@@ -68,25 +68,22 @@ void UE::updateUePositionHistory()
 	for (uint n = 0; n < UENodes.GetN(); n++)
 	{
 		Ptr<Node> node = UENodes.Get(n)->GetObject<Node>();
-		ns3::Ptr<ns3::LteUeRrc> rrc = 0;
+		Ptr<LteUeNetDevice> ueNetDev = 0;
 		for(uint32_t devs = 0; devs < UENodes.Get(n)->GetNDevices(); devs++){
-			Ptr<LteUeNetDevice> ueNetDev = UENodes.Get(n)->GetDevice(devs)->
-				GetObject<LteUeNetDevice>();
+			ueNetDev = UENodes.Get(n)->GetDevice(devs)->GetObject<LteUeNetDevice>();
 			if(ueNetDev != 0){
-				rrc = ueNetDev->GetRrc();
+				break;
 			}
 		}
 		Ptr<MobilityModel> mob = UENodes.Get(n)->GetObject<MobilityModel>();
-		auto it = uePositionHistory.find(std::make_pair(rrc->GetRnti(), rrc->GetCellId()));
+		auto it = uePositionHistory.find(ueNetDev->GetImsi());
 
 		if (it == uePositionHistory.end())
 		{
 			UE::historyPos historyP1P2;
 			historyP1P2.p1 = mob->GetPosition();
 			historyP1P2.p2 = mob->GetPosition();
-			 std::cout <<"[" << rrc->GetRnti() << " , " << rrc->GetCellId() << "]" << std::endl;
-			uePositionHistory.insert(std::make_pair(
-				std::make_pair(rrc->GetRnti(), rrc->GetCellId()), historyP1P2));
+			uePositionHistory.insert(std::make_pair(ueNetDev->GetImsi(), historyP1P2));
 		}
 		else
 		{
@@ -97,7 +94,7 @@ void UE::updateUePositionHistory()
 			}
 		}
 	}
-	double t = currentTime + 0.4;
+	double t = currentTime + 0.1;
 	Simulator::Schedule(Seconds(t >= simulationTime ? simulationTime : t),
 						&UE::updateUePositionHistory, this);
 }
@@ -125,11 +122,11 @@ xCenter(0), yCenter(0), radius(0), loggingDistance(30) {
 		mob->SetVelocity(Vector(55,0,0));
 	}
 
-	Simulator::Schedule(Seconds(1),
+	Simulator::Schedule(Seconds(0),
 					&UE::updateUePositionHistory, this);
 }
 
-UE::UE(int numberOfUes, int xBound, int yBound, int _radius, int _simulationTime) : loggingDistance(30)
+UE::UE(int numberOfUes, int xBound, int yBound, int _radius, int _simulationTime) : loggingDistance(10)
 {
 	numOfUEs = numberOfUes;
 	simulationTime = _simulationTime;
@@ -201,7 +198,7 @@ UE::UE(int numberOfUes, int xBound, int yBound, int _radius, int _simulationTime
 		}
 	}
 	//updateUePositionHistory();
-	Simulator::Schedule(Seconds(1),
+	Simulator::Schedule(Seconds(0),
 						&UE::updateUePositionHistory, this);
 }
 
@@ -211,7 +208,7 @@ void UE::setNetAnimProperties(AnimationInterface *anim, int imageId)
 	{
 		int nodeId = UENodes.Get(i)->GetId();
 		anim->UpdateNodeImage(nodeId, imageId);
-		anim->UpdateNodeSize(nodeId, 10, 10);
+		anim->UpdateNodeSize(nodeId, 20, 20);
 		anim->UpdateNodeDescription(UENodes.Get(i), "UE");
 	}
 	anim = 0;

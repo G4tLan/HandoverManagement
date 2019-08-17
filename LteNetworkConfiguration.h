@@ -59,7 +59,7 @@ private:
 
 LteNetworkConfiguration::LteNetworkConfiguration() {
 	//Config::SetDefault ("ns3::UdpClient::Interval", TimeValue (MilliSeconds (10)));
-	Config::SetDefault("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue(320) );
+	Config::SetDefault("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue(20) );
 	//must follow this order
 	setUpEpc();
 	setUpLteHelperWithEpc();
@@ -80,14 +80,14 @@ void LteNetworkConfiguration::setUpLteHelperWithEpc() {
 	lteHelper = CreateObject<LteHelper>();
 	lteHelper->SetEpcHelper(epcHelper);
 	lteHelper->SetHandoverAlgorithmType ("ns3::algorithmAdam");
-	// lteHelper->SetHandoverAlgorithmType ("ns3::A2A4RsrqHandoverAlgorithm");
+	//lteHelper->SetHandoverAlgorithmType ("ns3::A2A4RsrqHandoverAlgorithm");
 	// lteHelper->SetHandoverAlgorithmType ("ns3::A3RsrpHandoverAlgorithm");
 	lteHelper->SetAttribute ("UseIdealRrc", BooleanValue (true));
 	
 	Ptr<ns3::LogDistancePropagationLossModel> propModel = CreateObject<ns3::LogDistancePropagationLossModel>();
 	lteHelper->SetPathlossModelType(propModel->GetTypeId());
 	lteHelper->SetPathlossModelAttribute("Exponent", DoubleValue(3.76));
-	lteHelper->SetPathlossModelAttribute("ReferenceDistance", DoubleValue(1000)); //m
+	lteHelper->SetPathlossModelAttribute("ReferenceDistance", DoubleValue(100)); //m
 	lteHelper->SetPathlossModelAttribute("ReferenceLoss", DoubleValue(128.1)); //db
 	/*
 	lteHelper->SetFadingModel("ns3::TraceFadingLossModel");

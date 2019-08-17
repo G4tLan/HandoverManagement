@@ -37,11 +37,14 @@ void accessPositions(std::string context, const std::map<uint32_t, UE::historyPo
 }
 
 int main(int argc, char *argv[]) {
-	int numberOfEnbs = 7;
-	int numberOfUes = 10;
-	int distance = 500; //m  sqrt(3) * radius/2
+	int numberOfEnbs = 2;
+	int numberOfUes = 1;
+	int distance = 433; //m  sqrt(3) * radius/2
 	Enbs::Position_Types type = Enbs::HEX_MATRIX;
-	double simulationTime = 20;
+	double simulationTime = 10;
+	double eNbTxPower = 43; //dbm
+	int xCenter = 512;
+	int yCenter = 512;
 
 	CommandLine cmd;
 	cmd.AddValue("nEnbs", "Number of Enbs", numberOfEnbs);
@@ -53,14 +56,11 @@ int main(int argc, char *argv[]) {
 	cmd.Parse(argc, argv);
 
 	Enbs enbContainer(numberOfEnbs, distance, type);
-	int xCenter = 512;
-	int yCenter = 512;
-	int radius = 500; //change on the algorithm as well
-	UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4,simulationTime);
-	//UE ueContainer(numberOfUes,xCenter,yCenter,simulationTime);
-
-	double eNbTxPower = 43; //dbm
 	Config::SetDefault("ns3::LteEnbPhy::TxPower", DoubleValue(eNbTxPower));
+	// int radius = 500; //change on the algorithm as well
+	// UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4,simulationTime);
+	UE ueContainer(numberOfUes,xCenter,yCenter,simulationTime);
+
 
 	//setup the network
 	LteNetworkConfiguration lteNetwork;
