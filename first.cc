@@ -38,7 +38,7 @@ void accessPositions(std::string context, const std::map<uint32_t, UE::historyPo
 
 int main(int argc, char *argv[]) {
 	int numberOfEnbs = 2;
-	int numberOfUes = 1;
+	int numberOfUes = 10;
 	int distance = 433; //m  sqrt(3) * radius/2
 	Enbs::Position_Types type = Enbs::HEX_MATRIX;
 	double simulationTime = 10;
@@ -57,9 +57,6 @@ int main(int argc, char *argv[]) {
 
 	Enbs enbContainer(numberOfEnbs, distance, type);
 	Config::SetDefault("ns3::LteEnbPhy::TxPower", DoubleValue(eNbTxPower));
-	// int radius = 500; //change on the algorithm as well
-	// UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4,simulationTime);
-	UE ueContainer(numberOfUes,xCenter,yCenter,simulationTime);
 
 
 	//setup the network
@@ -68,6 +65,12 @@ int main(int argc, char *argv[]) {
 	//generate lte devices
 	NetDeviceContainer enbLteDevs = lteNetwork.generateLteEnbDevices(
 			enbContainer.getEnbs(), LteNetworkConfiguration::DeviceTypes::Enb);
+
+	// int radius = 500; //change on the algorithm as well
+	// UE ueContainer(numberOfUes, xCenter, yCenter, radius + distance / 4,simulationTime,Enbs::enbPositions);
+	enbContainer.populatePositions();
+	UE ueContainer(numberOfUes,xCenter,yCenter,simulationTime,Enbs::enbPositions);
+
 	NetDeviceContainer ueLteDevs = lteNetwork.generateLteEnbDevices(
 			ueContainer.getUes(), LteNetworkConfiguration::DeviceTypes::UE);
 
@@ -80,7 +83,6 @@ int main(int argc, char *argv[]) {
 	//ueContainer.updateUePositionHistory();
 
 	enbContainer.populateNeighbours();
-	enbContainer.populatePositions();
 
 	//Setup netAnim settings
 	AnimationInterface anim("./scratch/animation-simulation.xml");
