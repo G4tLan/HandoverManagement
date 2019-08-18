@@ -18,6 +18,8 @@
 #include "ns3/netanim-module.h"
 #include <ns3/constant-velocity-mobility-model.h>
 #include <string>
+#include <ctime>
+#include <cstdlib>
 
 namespace ns3
 {
@@ -38,8 +40,8 @@ public:
 	};
 	//uses rnti and cellid in that order as key
 	static std::map< uint64_t, UE::historyPos> uePositionHistory;
-	UE(int, int, int, int, int);
-	UE(int,int,int,int);//for testing
+	UE(int, int, int, int, int,std::map<uint32_t,  ns3::Vector>);
+	UE(int,int,int,int,std::map<uint32_t,  ns3::Vector>);//for testing
 	void setNetAnimProperties(AnimationInterface *, int);
 	NodeContainer *getUes()
 	{
@@ -47,6 +49,7 @@ public:
 	}
 
 	void updateUePositionHistory();
+	void createInitialUePositions(std::map<uint32_t,  ns3::Vector>);
 
 private:
 	int numOfUEs;
@@ -54,6 +57,7 @@ private:
 	MobilityHelper UeMobilityHelper;
 	MobilityHelper UeMobilityHelper60Kmh;
 	MobilityHelper UeMobilityHelper120Kmh;
+	Ptr<ListPositionAllocator> initPositionAlloc;
 	int xCenter;
 	int yCenter;
 	int radius;
@@ -62,10 +66,27 @@ private:
 };
 std::map<uint64_t, UE::historyPos> UE::uePositionHistory = {};
 
+void UE::createInitialUePositions(std::map<uint32_t,  ns3::Vector> enpPos){
+
+	std::srand(time(0));
+	initPositionAlloc = CreateObject<ListPositionAllocator>();
+	int numOfEnbs = enpPos.size();
+	int radius = 200;
+
+	for (uint32_t n = 0; n < UENodes.GetN(); n++){
+		Vector enb = enpPos.find(n%numOfEnbs + 1)->second;
+		int sign1 = rand()%2?-1:1; 
+		int sign2 = rand()%2?-1:1; 
+		Vector v = Vector(enb.x + (rand()%radius)*sign1,
+			enb.y + (rand()%radius)*sign2,0);
+		initPositionAlloc->Add(v);
+	}
+}
+
 void UE::updateUePositionHistory()
 {
 	double currentTime = Simulator::Now().GetSeconds();
-	for (uint n = 0; n < UENodes.GetN(); n++)
+	for (uint32_t n = 0; n < UENodes.GetN(); n++)
 	{
 		Ptr<Node> node = UENodes.Get(n)->GetObject<Node>();
 		Ptr<LteUeNetDevice> ueNetDev = 0;
@@ -99,18 +120,14 @@ void UE::updateUePositionHistory()
 						&UE::updateUePositionHistory, this);
 }
 
-UE::UE(int numberOfUes, int xBound, int yBound, int _simulationTime):
+UE::UE(int numberOfUes, int xBound, int yBound, int _simulationTime,
+	std::map<uint32_t,  ns3::Vector> enpos):
 xCenter(0), yCenter(0), radius(0), loggingDistance(30) {
 	numOfUEs = numberOfUes;
 	UENodes.Create(numberOfUes);
 
-	Ptr<ListPositionAllocator> positionAlloc = CreateObject<
-			ListPositionAllocator>();
-	for (int i = 0; i < numberOfUes; i++) {
-		positionAlloc->Add(Vector(xBound, yBound, 0));
-	}
-
-	UeMobilityHelper.SetPositionAllocator(positionAlloc);
+	createInitialUePositions(enpos);
+	UeMobilityHelper.SetPositionAllocator(initPositionAlloc);
 	UeMobilityHelper.SetMobilityModel("ns3::ConstantVelocityMobilityModel");
 	UeMobilityHelper.Install(UENodes);
 	
@@ -126,12 +143,13 @@ xCenter(0), yCenter(0), radius(0), loggingDistance(30) {
 					&UE::updateUePositionHistory, this);
 }
 
-UE::UE(int numberOfUes, int xBound, int yBound, int _radius, int _simulationTime) : loggingDistance(10)
+UE::UE(int numberOfUes, int xBound, int yBound, int _radius, int _simulationTime,
+	std::map<uint32_t,  ns3::Vector> enpos) : loggingDistance(10)
 {
 	numOfUEs = numberOfUes;
 	simulationTime = _simulationTime;
 	UENodes.Create(numberOfUes);
-
+	createInitialUePositions(enpos);
 	UeMobilityHelper.SetPositionAllocator("ns3::RandomDiscPositionAllocator",
 										  "X", StringValue(std::to_string(xBound)), "Y",
 										  StringValue(std::to_string(yBound)), "Rho",
