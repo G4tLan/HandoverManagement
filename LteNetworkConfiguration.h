@@ -58,8 +58,8 @@ private:
 };
 
 LteNetworkConfiguration::LteNetworkConfiguration() {
-	//Config::SetDefault ("ns3::UdpClient::Interval", TimeValue (MilliSeconds (10)));
-	Config::SetDefault("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue(20) );
+	Config::SetDefault ("ns3::UdpClient::Interval", TimeValue (MilliSeconds (1)));
+	Config::SetDefault("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue(320) );
 	//must follow this order
 	setUpEpc();
 	setUpLteHelperWithEpc();
@@ -176,7 +176,7 @@ void LteNetworkConfiguration::startApps(NodeContainer* ueNodes, NetDeviceContain
 	// exactly at the same time)
 	Ptr<UniformRandomVariable> startTimeSeconds = CreateObject<UniformRandomVariable> ();
 	startTimeSeconds->SetAttribute ("Min", DoubleValue (0));
-	startTimeSeconds->SetAttribute ("Max", DoubleValue (0.010));
+	startTimeSeconds->SetAttribute ("Max", DoubleValue (0.1));
 
 	uint32_t numberOfUes = ueNodes->GetN();
 

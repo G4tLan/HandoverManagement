@@ -68,7 +68,7 @@ std::map<uint64_t, UE::historyPos> UE::uePositionHistory = {};
 
 void UE::createInitialUePositions(std::map<uint32_t,  ns3::Vector> enpPos){
 
-	std::srand(time(0));
+	std::srand(5);
 	initPositionAlloc = CreateObject<ListPositionAllocator>();
 	int numOfEnbs = enpPos.size();
 	int radius = 200;
@@ -99,6 +99,19 @@ void UE::updateUePositionHistory()
 		Ptr<MobilityModel> mob = UENodes.Get(n)->GetObject<MobilityModel>();
 		auto it = uePositionHistory.find(ueNetDev->GetImsi());
 
+		int xminBound = 0, xmaxBound = 1110;
+		int yminBound = 0, ymaxBound = 1110;
+
+		if((xminBound > mob->GetPosition().x || xmaxBound < mob->GetPosition().x)
+			|| (yminBound > mob->GetPosition().y || ymaxBound < mob->GetPosition().y)
+		)
+		{
+			Ptr<ConstantVelocityMobilityModel> mob  =
+				UENodes.Get(n)->GetObject<ConstantVelocityMobilityModel>();
+			Vector velocity = mob->GetVelocity();
+			mob->SetVelocity(Vector(velocity.x * -1, velocity.y * -1 ,0));
+		}
+
 		if (it == uePositionHistory.end())
 		{
 			UE::historyPos historyP1P2;
@@ -115,7 +128,7 @@ void UE::updateUePositionHistory()
 			}
 		}
 	}
-	double t = currentTime + 0.1;
+	double t = currentTime + 0.05;
 	Simulator::Schedule(Seconds(t >= simulationTime ? simulationTime : t),
 						&UE::updateUePositionHistory, this);
 }
@@ -136,7 +149,7 @@ xCenter(0), yCenter(0), radius(0), loggingDistance(30) {
 				UENodes.Get(n)->GetObject<ConstantVelocityMobilityModel>();
 		//mob->SetVelocity(Vector(10, 0, 0));
 		if(mob != 0)
-		mob->SetVelocity(Vector(55,0,0));
+		mob->SetVelocity(Vector(16.6667,0,0));
 	}
 
 	Simulator::Schedule(Seconds(0),
