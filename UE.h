@@ -68,7 +68,6 @@ std::map<uint64_t, UE::historyPos> UE::uePositionHistory = {};
 
 void UE::createInitialUePositions(std::map<uint32_t,  ns3::Vector> enpPos){
 
-	std::srand(5);
 	initPositionAlloc = CreateObject<ListPositionAllocator>();
 	int numOfEnbs = enpPos.size();
 	int radius = 200;
@@ -144,12 +143,16 @@ xCenter(0), yCenter(0), radius(0), loggingDistance(30) {
 	UeMobilityHelper.SetMobilityModel("ns3::ConstantVelocityMobilityModel");
 	UeMobilityHelper.Install(UENodes);
 	
+	std::srand(5);
+	double speed = 16.667;
 	for (uint n = 0; n < UENodes.GetN(); n++) {
 		Ptr<ConstantVelocityMobilityModel> mob  =
 				UENodes.Get(n)->GetObject<ConstantVelocityMobilityModel>();
 		//mob->SetVelocity(Vector(10, 0, 0));
+		int flip = rand()%2;
+		int sign = rand()%2?1:-1;
 		if(mob != 0)
-		mob->SetVelocity(Vector(16.6667,0,0));
+			mob->SetVelocity(Vector(flip*speed*sign, (1-flip)*speed*sign,0));
 	}
 
 	Simulator::Schedule(Seconds(0),
