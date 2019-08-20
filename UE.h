@@ -70,7 +70,7 @@ void UE::createInitialUePositions(std::map<uint32_t,  ns3::Vector> enpPos){
 
 	initPositionAlloc = CreateObject<ListPositionAllocator>();
 	int numOfEnbs = enpPos.size();
-	int radius = 200;
+	int radius = 100;
 
 	for (uint32_t n = 0; n < UENodes.GetN(); n++){
 		Vector enb = enpPos.find(n%numOfEnbs + 1)->second;
@@ -144,13 +144,15 @@ xCenter(0), yCenter(0), radius(0), loggingDistance(30) {
 	UeMobilityHelper.Install(UENodes);
 	
 	std::srand(5);
-	double speed = 16.667;
+	double speed = 50;
+	std::cout << "speeds " << std::endl;
 	for (uint n = 0; n < UENodes.GetN(); n++) {
 		Ptr<ConstantVelocityMobilityModel> mob  =
 				UENodes.Get(n)->GetObject<ConstantVelocityMobilityModel>();
 		//mob->SetVelocity(Vector(10, 0, 0));
 		int flip = rand()%2;
 		int sign = rand()%2?1:-1;
+		std::cout << flip*speed*sign << "," << (1-flip)*speed*sign << std::endl;
 		if(mob != 0)
 			mob->SetVelocity(Vector(flip*speed*sign, (1-flip)*speed*sign,0));
 	}
