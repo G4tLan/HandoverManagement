@@ -98,18 +98,6 @@ void UE::updateUePositionHistory()
 		Ptr<MobilityModel> mob = UENodes.Get(n)->GetObject<MobilityModel>();
 		auto it = uePositionHistory.find(ueNetDev->GetImsi());
 
-		int xminBound = 0, xmaxBound = 1110;
-		int yminBound = 0, ymaxBound = 1110;
-
-		if((xminBound > mob->GetPosition().x || xmaxBound < mob->GetPosition().x)
-			|| (yminBound > mob->GetPosition().y || ymaxBound < mob->GetPosition().y)
-		)
-		{
-			Ptr<ConstantVelocityMobilityModel> mob  =
-				UENodes.Get(n)->GetObject<ConstantVelocityMobilityModel>();
-			Vector velocity = mob->GetVelocity();
-			mob->SetVelocity(Vector(velocity.x * -1, velocity.y * -1 ,0));
-		}
 
 		if (it == uePositionHistory.end())
 		{
@@ -122,12 +110,24 @@ void UE::updateUePositionHistory()
 		{
 			if (calculateDistance(mob->GetPosition(), it->second.p2) >= loggingDistance)
 			{
+				int xminBound = 30, xmaxBound = 950;
+				int yminBound = 30, ymaxBound = 950;
+
+				if((xminBound > mob->GetPosition().x || xmaxBound < mob->GetPosition().x)
+					|| (yminBound > mob->GetPosition().y || ymaxBound < mob->GetPosition().y)
+				)
+				{
+					Ptr<ConstantVelocityMobilityModel> mob  =
+						UENodes.Get(n)->GetObject<ConstantVelocityMobilityModel>();
+					Vector velocity = mob->GetVelocity();
+					mob->SetVelocity(Vector(velocity.x * -1, velocity.y * -1 ,0));
+				}
 				it->second.p1 = it->second.p2;
 				it->second.p2 = mob->GetPosition();
 			}
 		}
 	}
-	double t = currentTime + 0.05;
+	double t = currentTime + 0.1;
 	Simulator::Schedule(Seconds(t >= simulationTime ? simulationTime : t),
 						&UE::updateUePositionHistory, this);
 }
