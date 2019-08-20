@@ -37,11 +37,11 @@ void accessPositions(std::string context, const std::map<uint32_t, UE::historyPo
 }
 
 int main(int argc, char *argv[]) {
-	int numberOfEnbs = 14;
+	int numberOfEnbs = 7;
 	int numberOfUes = 42;
-	int distance = 800; //m  sqrt(3) * radius/2
+	int distance = 433; //m  sqrt(3) * radius/2
 	Enbs::Position_Types type = Enbs::HEX_MATRIX;
-	double simulationTime = 20;
+	double simulationTime = 15;
 	double eNbTxPower = 43; //dbm
 	int xCenter = 512;
 	int yCenter = 512;
