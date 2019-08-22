@@ -70,7 +70,7 @@ void UE::createInitialUePositions(std::map<uint32_t,  ns3::Vector> enpPos){
 
 	initPositionAlloc = CreateObject<ListPositionAllocator>();
 	int numOfEnbs = enpPos.size();
-	int radius = 100;
+	int radius = 300;
 
 	for (uint32_t n = 0; n < UENodes.GetN(); n++){
 		Vector enb = enpPos.find(n%numOfEnbs + 1)->second;
