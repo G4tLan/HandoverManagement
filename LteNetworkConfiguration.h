@@ -79,8 +79,9 @@ LteNetworkConfiguration::LteNetworkConfiguration() {
 void LteNetworkConfiguration::setUpLteHelperWithEpc() {
 	lteHelper = CreateObject<LteHelper>();
 	lteHelper->SetEpcHelper(epcHelper);
-	lteHelper->SetHandoverAlgorithmType ("ns3::algorithmAdam");
-	//lteHelper->SetHandoverAlgorithmType ("ns3::A2A4RsrqHandoverAlgorithm");
+	//lteHelper->SetHandoverAlgorithmType ("ns3::algorithmAdam");
+	lteHelper->SetHandoverAlgorithmType ("ns3::songMoonAlgorithm");
+	// lteHelper->SetHandoverAlgorithmType ("ns3::A2A4RsrqHandoverAlgorithm");
 	// lteHelper->SetHandoverAlgorithmType ("ns3::A3RsrpHandoverAlgorithm");
 	lteHelper->SetAttribute ("UseIdealRrc", BooleanValue (true));
 	
