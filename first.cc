@@ -199,10 +199,12 @@ NotifyRandomAccessErrorUe (uint64_t imsi, uint16_t cellId, uint16_t rnti)
   std::cout<< Simulator::Now ().GetSeconds ()
             << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
             << ", UE RRC Random access Failed" << std::endl;
-  numOfRLF+=1;
   auto it = successfulHandovers.find(imsi);
   if(it != successfulHandovers.end()){
+    std::cout << "\n handover diff " <<  Simulator::Now().GetSeconds() - it->second.time.GetSeconds() << std::endl << std::endl;
     if( (Simulator::Now().GetSeconds() - it->second.time.GetSeconds()) <= 2){
+      numOfTooEarlyHO+=1;
+    } else {
       numOfTooLateHO+=1;
     }
   }
@@ -215,7 +217,7 @@ HandoverFailureEnb (uint64_t imsi, uint16_t rnti, uint16_t cellId, std::string c
             << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
             << ", "<<cause << std::endl;
   numOfHAndoverFail+=1;
-  numOfTooEarlyHO+=1;
+  numOfTooLateHO+=1;//
   ongoingHandovers.erase(imsi);
 }
 
@@ -357,10 +359,10 @@ int main(int argc, char *argv[]) {
   std::cout << "\n Failed: " << numOfHAndoverInit - numOfHAndoverSucceess;
   std::cout << "\n Failed Retransmissions: " << numOfHAndoverFail - numOfHAndoverSucceess + numOfHAndoverInit;
   std::cout << "\n Ping Pong: " << numOfHAndoverPingPong << std::endl;
-  std::cout << "RLF: " << numOfRLF;
+  std::cout << "RLF: " << numOfTooEarlyHO + numOfTooLateHO;
   std::cout << "\n Too Early: " << numOfTooEarlyHO;
   std::cout << "\n Too Late: " << numOfTooLateHO;
-  std::cout << "\nHPI: " << (numOfTooLateHO + numOfTooEarlyHO)/(numOfHAndoverFail+numOfHAndoverSucceess) << std::endl;
+  std::cout << "\nHPI: " << (double)(numOfTooLateHO + numOfTooEarlyHO)/(double)(numOfHAndoverFail+numOfHAndoverSucceess) << std::endl;
   std::cout << "------------------------------------------------"<< std::endl;
   std::cout << "------------------------------------------------"<< std::endl;
 
