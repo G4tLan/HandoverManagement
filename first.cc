@@ -11,6 +11,9 @@ int numOfHAndoverSucceess = 0;
 int numOfHAndoverFail = 0;
 int numOfHAndoverInit = 0;
 int numOfHAndoverPingPong = 0;
+int numOfRLF = 0;
+int numOfTooLateHO = 0;
+int numOfTooEarlyHO = 0;
 
 struct cellUePair {
   uint16_t rnti;
@@ -20,6 +23,7 @@ struct cellUePair {
 };
 
 static std::map<uint64_t, cellUePair> ongoingHandovers;
+static std::map<uint64_t, cellUePair> successfulHandovers;
 
 //https://gitlab.cc-asp.fraunhofer.de/elena-ns3-lte/elena/tree/master ELENA
 
@@ -91,12 +95,12 @@ UeStateTransition (uint64_t imsi, uint16_t cellId, uint16_t rnti, LteUeRrc::Stat
 void
 EnbTimerExpiry (uint64_t imsi, uint16_t rnti, uint16_t cellId, std::string cause)
 {
-  if(cause=="HandoverJoiningTimeout" || cause== "HandoverLeavingTimeout")
-    {
+  // if(cause=="HandoverJoiningTimeout" || cause== "HandoverLeavingTimeout")
+  //   {
   //  std::cout << Simulator::Now ().GetSeconds ()
   //           << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
   //           << ", ENB RRC " << cause << std::endl;
-    }
+  //   }
 }
 
 void
@@ -169,38 +173,56 @@ NotifyHandoverEndOkEnb (std::string context,
                         uint16_t cellId,
                         uint16_t rnti)
 {
+  auto it = ongoingHandovers.find(imsi);
+  it->second.time = Simulator::Now();
+  successfulHandovers[imsi] = it->second;
   ongoingHandovers.erase(imsi);
-  std::cout << Simulator::Now ().GetSeconds () << " " << context
-            << " eNB cellId " << cellId
-            << ": completed handover of UE with IMSI " << imsi
-            << " RNTI " << rnti
-            << std::endl;
+  // std::cout << Simulator::Now ().GetSeconds () << " " << context
+  //           << " eNB cellId " << cellId
+  //           << ": completed handover of UE with IMSI " << imsi
+  //           << " RNTI " << rnti
+  //           << std::endl;
   numOfHAndoverSucceess+=1;
 }
 
 void
 NotifyHandoverEndErrorUe (uint64_t imsi, uint16_t cellId, uint16_t rnti)
 {
-//  std::cout << Simulator::Now ().GetSeconds ()
-//             << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
-//             << ", UE RRC Handover Failed" << std::endl;
+  // std::cout << Simulator::Now ().GetSeconds ()
+  //           << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
+  //           << ", UE RRC Handover Failed" << std::endl;
 }
 
 void
 NotifyRandomAccessErrorUe (uint64_t imsi, uint16_t cellId, uint16_t rnti)
 {
-// std::cout<< Simulator::Now ().GetSeconds ()
-//             << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
-//             << ", UE RRC Random access Failed" << std::endl;
+  // std::cout<< Simulator::Now ().GetSeconds ()
+  //           << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
+  //           << ", UE RRC Random access Failed" << std::endl;
+  numOfRLF+=1;
+  auto it = successfulHandovers.find(imsi);
+  if(it != successfulHandovers.end()){
+    if( (Simulator::Now().GetSeconds() - it->second.time.GetSeconds()) <= 2){
+      numOfTooLateHO+=1;
+    }
+  }
 }
 
 void
 HandoverFailureEnb (uint64_t imsi, uint16_t rnti, uint16_t cellId, std::string cause)
 {
-  std::cout<< Simulator::Now ().GetSeconds ()
-            << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
-            << ", "<<cause << std::endl;
+  // std::cout<< Simulator::Now ().GetSeconds ()
+  //           << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
+  //           << ", "<<cause << std::endl;
   numOfHAndoverFail+=1;
+  numOfTooEarlyHO+=1;
+  ongoingHandovers.erase(imsi);
+}
+
+void
+NotifyNewUeContext(const uint16_t cellId, const uint16_t rnti){
+  std::cout<< Simulator::Now ().GetSeconds ()
+          << " CellID " << cellId << " RNTI " << rnti << " addded UE" << std::endl;
 }
 
 
@@ -229,11 +251,11 @@ void accessPositions(std::string context, const std::map<uint32_t, UE::historyPo
 }
 
 int main(int argc, char *argv[]) {
-	int numberOfEnbs = 7;
-	int numberOfUes = 126;
+	int numberOfEnbs = 3;
+	int numberOfUes = 40;
 	int distance = 433; //m  sqrt(3) * radius/2
 	Enbs::Position_Types type = Enbs::HEX_MATRIX;
-	double simulationTime = 20;
+	double simulationTime = 30;
 	double eNbTxPower = 43; //dbm
 	int xCenter = 512;
 	int yCenter = 512;
@@ -250,6 +272,7 @@ int main(int argc, char *argv[]) {
 	Enbs enbContainer(numberOfEnbs, distance, type);
 	Config::SetDefault("ns3::LteEnbPhy::TxPower", DoubleValue(eNbTxPower));
 	Config::SetDefault ("ns3::RrFfMacScheduler::HarqEnabled", BooleanValue (false));
+ // Config::SetDefault ("ns3::LteEnbRrc::HandoverJoiningTimeoutDuration", TimeValue (MilliSeconds (500)));
 
 
 	//setup the network
@@ -302,6 +325,9 @@ int main(int argc, char *argv[]) {
                                      MakeCallback (&HandoverFailureEnb));
    Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteEnbRrc/NotifyConnectionRelease",
                                      MakeCallback (&NotifyConnectionReleaseAtEnodeB));
+   Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteEnbRrc/NewUeContext",
+                                     MakeCallback (&NotifyNewUeContext));
+                                     
 
 	//Setup netAnim settings
 	AnimationInterface anim("./scratch/animation-simulation.xml");
@@ -330,6 +356,10 @@ int main(int argc, char *argv[]) {
   std::cout << "\n Successful: " << numOfHAndoverSucceess;
   std::cout << "\n Failed: " << numOfHAndoverFail;
   std::cout << "\n Ping Pong: " << numOfHAndoverPingPong << std::endl;
+  std::cout << "RLF: " << numOfRLF;
+  std::cout << "\n Too Early: " << numOfTooEarlyHO;
+  std::cout << "\n Too Late: " << numOfTooLateHO;
+  std::cout << "\nHPI: " << (numOfTooLateHO + numOfTooEarlyHO)/(numOfHAndoverFail+numOfHAndoverSucceess) << std::endl;
   std::cout << "------------------------------------------------"<< std::endl;
   std::cout << "------------------------------------------------"<< std::endl;
 
