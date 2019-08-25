@@ -1,6 +1,7 @@
 #include "LteNetworkConfiguration.h"
 #include "ns3/flow-monitor-module.h"
 #include "ns3/config-store-module.h"
+#include <ns3/songMoonAlgorithm.h>
 #include "ns3/netanim-module.h"
 #include "ns3/core-module.h"
 #include <ns3/Enbs.h>
@@ -14,6 +15,7 @@ int numOfHAndoverPingPong = 0;
 int numOfRLF = 0;
 int numOfTooLateHO = 0;
 int numOfTooEarlyHO = 0;
+double HPI = 1;
 
 struct cellUePair {
   uint16_t rnti;
@@ -79,17 +81,17 @@ static const std::string g_ueRrcStateName[LteUeRrc::NUM_STATES] =
  * \param s The UE RRC state.
  * \return The string representation of the given state.
  */
-static const std::string & ToString (LteUeRrc::State s)
-{
-  return g_ueRrcStateName[s];
-}
+// static const std::string & ToString (LteUeRrc::State s)
+// {
+//   return g_ueRrcStateName[s];
+// }
 
 void
 UeStateTransition (uint64_t imsi, uint16_t cellId, uint16_t rnti, LteUeRrc::State oldState, LteUeRrc::State newState)
 {
-    std::cout << Simulator::Now ().GetSeconds ()
-    << " UE with IMSI " << imsi << " camped or connected to cell " << cellId <<
-    " transitions from "<< ToString (oldState) << " to " << ToString (newState)<<std::endl;
+    // std::cout << Simulator::Now ().GetSeconds ()
+    // << " UE with IMSI " << imsi << " camped or connected to cell " << cellId <<
+    // " transitions from "<< ToString (oldState) << " to " << ToString (newState)<<std::endl;
 }
 
 void
@@ -97,18 +99,18 @@ EnbTimerExpiry (uint64_t imsi, uint16_t rnti, uint16_t cellId, std::string cause
 {
   if(cause=="HandoverJoiningTimeout" || cause== "HandoverLeavingTimeout")
     {
-   std::cout << Simulator::Now ().GetSeconds ()
-            << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
-            << ", ENB RRC " << cause << std::endl;
+  //  std::cout << Simulator::Now ().GetSeconds ()
+  //           << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
+  //           << ", ENB RRC " << cause << std::endl;
     }
 }
 
 void
 NotifyConnectionReleaseAtEnodeB (uint64_t imsi, uint16_t cellId, uint16_t rnti)
 {
-  std::cout<< Simulator::Now ().GetSeconds ()
-            << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
-            << ", UE context destroyed at eNodeB" << std::endl ;
+  // std::cout<< Simulator::Now ().GetSeconds ()
+  //           << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
+  //           << ", UE context destroyed at eNodeB" << std::endl ;
 }
 
 void
@@ -118,12 +120,12 @@ NotifyHandoverStartUe (std::string context,
                        uint16_t rnti,
                        uint16_t targetcellId)
 {
-  std::cout << Simulator::Now ().GetSeconds () << " " << context
-            << " UE IMSI " << imsi
-            << ": previously connected to cellId " << cellId
-            << " with RNTI " << rnti
-            << ", doing handover to cellId " << targetcellId
-            << std::endl;
+  // std::cout << Simulator::Now ().GetSeconds () << " " << context
+  //           << " UE IMSI " << imsi
+  //           << ": previously connected to cellId " << cellId
+  //           << " with RNTI " << rnti
+  //           << ", doing handover to cellId " << targetcellId
+  //           << std::endl;
 }
 
 void
@@ -132,11 +134,11 @@ NotifyHandoverEndOkUe (std::string context,
                        uint16_t cellId,
                        uint16_t rnti)
 {
-  std::cout << Simulator::Now ().GetSeconds () << " " << context
-            << " UE IMSI " << imsi
-            << ": successful handover to cellId " << cellId
-            << " with RNTI " << rnti
-            << std::endl;
+  // std::cout << Simulator::Now ().GetSeconds () << " " << context
+  //           << " UE IMSI " << imsi
+  //           << ": successful handover to cellId " << cellId
+  //           << " with RNTI " << rnti
+  //           << std::endl;
 }
 
 void
@@ -158,12 +160,12 @@ NotifyHandoverStartEnb (std::string context,
     }
   }
   ongoingHandovers.insert(std::make_pair(imsi,pair));
-  std::cout << Simulator::Now ().GetSeconds () << " " << context
-            << " eNB cellId " << cellId
-            << ": start handover of UE with IMSI " << imsi
-            << " RNTI " << rnti
-            << " to cellId " << targetcellId
-            << std::endl;
+  // std::cout << Simulator::Now ().GetSeconds () << " " << context
+  //           << " eNB cellId " << cellId
+  //           << ": start handover of UE with IMSI " << imsi
+  //           << " RNTI " << rnti
+  //           << " to cellId " << targetcellId
+  //           << std::endl;
   numOfHAndoverInit+=1;
 }
 
@@ -177,32 +179,32 @@ NotifyHandoverEndOkEnb (std::string context,
   it->second.time = Simulator::Now();
   successfulHandovers[imsi] = it->second;
   ongoingHandovers.erase(imsi);
-  std::cout << Simulator::Now ().GetSeconds () << " " << context
-            << " eNB cellId " << cellId
-            << ": completed handover of UE with IMSI " << imsi
-            << " RNTI " << rnti
-            << std::endl;
+  // std::cout << Simulator::Now ().GetSeconds () << " " << context
+  //           << " eNB cellId " << cellId
+  //           << ": completed handover of UE with IMSI " << imsi
+  //           << " RNTI " << rnti
+  //           << std::endl;
   numOfHAndoverSucceess+=1;
 }
 
 void
 NotifyHandoverEndErrorUe (uint64_t imsi, uint16_t cellId, uint16_t rnti)
 {
-  std::cout << Simulator::Now ().GetSeconds ()
-            << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
-            << ", UE RRC Handover Failed" << std::endl;
+  // std::cout << Simulator::Now ().GetSeconds ()
+  //           << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
+  //           << ", UE RRC Handover Failed" << std::endl;
 }
 
 void
-NotifyRandomAccessErrorUe (uint64_t imsi, uint16_t cellId, uint16_t rnti)
+NotifyRadioLinkFailureUe (uint64_t imsi, uint16_t rnti, uint16_t cellId)
 {
-  std::cout<< Simulator::Now ().GetSeconds ()
-            << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
-            << ", UE RRC Random access Failed" << std::endl;
+  // std::cout<< Simulator::Now ().GetSeconds ()
+  //           << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
+  //           << ", UE RRC Random access Failed" << std::endl;
   auto it = successfulHandovers.find(imsi);
   if(it != successfulHandovers.end()){
     std::cout << "\n handover diff " <<  Simulator::Now().GetSeconds() - it->second.time.GetSeconds() << std::endl << std::endl;
-    if( (Simulator::Now().GetSeconds() - it->second.time.GetSeconds()) <= 2){
+    if( (Simulator::Now().GetSeconds() - it->second.time.GetSeconds()) <= 1){
       numOfTooEarlyHO+=1;
     } else {
       numOfTooLateHO+=1;
@@ -213,9 +215,9 @@ NotifyRandomAccessErrorUe (uint64_t imsi, uint16_t cellId, uint16_t rnti)
 void
 HandoverFailureEnb (uint64_t imsi, uint16_t rnti, uint16_t cellId, std::string cause)
 {
-  std::cout<< Simulator::Now ().GetSeconds ()
-            << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
-            << ", "<<cause << std::endl;
+  // std::cout<< Simulator::Now ().GetSeconds ()
+  //           << " IMSI " << imsi << ", RNTI " << rnti << ", cellId " << cellId
+  //           << ", "<<cause << std::endl;
   numOfHAndoverFail+=1;
   numOfTooLateHO+=1;//
   ongoingHandovers.erase(imsi);
@@ -223,8 +225,8 @@ HandoverFailureEnb (uint64_t imsi, uint16_t rnti, uint16_t cellId, std::string c
 
 void
 NotifyNewUeContext(const uint16_t cellId, const uint16_t rnti){
-  std::cout<< Simulator::Now ().GetSeconds ()
-          << " CellID " << cellId << " RNTI " << rnti << " addded UE" << std::endl;
+  // std::cout<< Simulator::Now ().GetSeconds ()
+  //         << " CellID " << cellId << " RNTI " << rnti << " addded UE" << std::endl;
 }
 
 
@@ -240,11 +242,13 @@ time_t start = time(0);
 
 void simulationCompletion(double totalSimTime ) {
 	ns3::Time currentTime = Simulator::Now();
+  HPI = currentTime.GetSeconds();
+  ns3::songMoonAlgorithm::updateParameters(HPI);
 	double percentage = currentTime.GetSeconds()/(totalSimTime);
   time_t epoch = start + difftime(time(0), start)/(percentage?percentage:0.0000001);
 	std::cout << "simulation completion "
 	 << percentage*100 << "% estimated time " << asctime(localtime(&epoch)) << std::endl;
-	Simulator::Schedule(Seconds(currentTime.GetSeconds() + 0.5),
+	Simulator::Schedule(Seconds(0.5),
 	&simulationCompletion, totalSimTime);
 }
 
@@ -321,8 +325,8 @@ int main(int argc, char *argv[]) {
                    MakeCallback (&NotifyHandoverEndOkUe));
   Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteUeRrc/HandoverEndError",
                                      MakeCallback (&NotifyHandoverEndErrorUe));
-   Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteUeRrc/RandomAccessError",
-                                     MakeCallback (&NotifyRandomAccessErrorUe));
+   Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteUeRrc/RadioLinkFailure",
+                                     MakeCallback (&NotifyRadioLinkFailureUe));
    Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteEnbRrc/HandoverFailure",
                                      MakeCallback (&HandoverFailureEnb));
    Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteEnbRrc/NotifyConnectionRelease",
