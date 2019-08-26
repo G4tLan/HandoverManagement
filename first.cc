@@ -15,7 +15,15 @@ int numOfHAndoverPingPong = 0;
 int numOfRLF = 0;
 int numOfTooLateHO = 0;
 int numOfTooEarlyHO = 0;
-double HPI = 1;
+double HPI = 0;
+
+ns3::songMoonAlgorithm::RLFStats calculateHPI(){
+  return {
+      (double)(numOfRLF)/(double)(numOfHAndoverInit?numOfHAndoverInit:0.0000001),
+      (double)numOfTooLateHO/(double)(numOfHAndoverInit?numOfHAndoverInit:0.0000001),
+      (double)numOfTooEarlyHO/(double)(numOfHAndoverInit?numOfHAndoverInit:0.0000001)
+      };
+}
 
 struct cellUePair {
   uint16_t rnti;
@@ -185,6 +193,7 @@ NotifyHandoverEndOkEnb (std::string context,
   //           << " RNTI " << rnti
   //           << std::endl;
   numOfHAndoverSucceess+=1;
+  ns3::songMoonAlgorithm::updateParameters(calculateHPI());
 }
 
 void
@@ -210,6 +219,9 @@ NotifyRadioLinkFailureUe (uint64_t imsi, uint16_t rnti, uint16_t cellId)
       numOfTooLateHO+=1;
     }
   }
+  numOfRLF+=1;
+  ns3::songMoonAlgorithm::updateParameters(calculateHPI());
+  ns3::songMoonAlgorithm::updateMeasConf = true;
 }
 
 void
@@ -221,6 +233,9 @@ HandoverFailureEnb (uint64_t imsi, uint16_t rnti, uint16_t cellId, std::string c
   numOfHAndoverFail+=1;
   numOfTooLateHO+=1;//
   ongoingHandovers.erase(imsi);
+
+  ns3::songMoonAlgorithm::updateParameters(calculateHPI());
+  ns3::songMoonAlgorithm::updateMeasConf = true;
 }
 
 void
@@ -243,7 +258,6 @@ time_t start = time(0);
 void simulationCompletion(double totalSimTime ) {
 	ns3::Time currentTime = Simulator::Now();
   HPI = currentTime.GetSeconds();
-  ns3::songMoonAlgorithm::updateParameters(HPI);
 	double percentage = currentTime.GetSeconds()/(totalSimTime);
   time_t epoch = start + difftime(time(0), start)/(percentage?percentage:0.0000001);
 	std::cout << "simulation completion "
@@ -256,13 +270,14 @@ void accessPositions(std::string context, const std::map<uint32_t, UE::historyPo
 	std::cout << "poses" << std::endl;
 }
 
+
 int main(int argc, char *argv[]) {
-	int numberOfEnbs = 3;
-	int numberOfUes = 40;
+	int numberOfEnbs = 2;
+	int numberOfUes = 100;
 	int distance = 433; //m  sqrt(3) * radius/2
 	Enbs::Position_Types type = Enbs::HEX_MATRIX;
 	double simulationTime = 30;
-	double eNbTxPower = 43; //dbm
+	double eNbTxPower = 50; //dbm
 	int xCenter = 512;
 	int yCenter = 512;
 
@@ -279,7 +294,8 @@ int main(int argc, char *argv[]) {
 	Config::SetDefault("ns3::LteEnbPhy::TxPower", DoubleValue(eNbTxPower));
 	Config::SetDefault ("ns3::RrFfMacScheduler::HarqEnabled", BooleanValue (false));
   // Config::SetDefault ("ns3::LteEnbRrc::HandoverJoiningTimeoutDuration", TimeValue (MilliSeconds (500)));
-
+  Config::SetDefault ("ns3::songMoonAlgorithm::NumberOfNeighbours", UintegerValue(numberOfEnbs));
+  Config::SetDefault ("ns3::songMoonAlgorithm::ThresholdChange", UintegerValue(3));
 
 	//setup the network
 	LteNetworkConfiguration lteNetwork;
@@ -366,7 +382,7 @@ int main(int argc, char *argv[]) {
   std::cout << "RLF: " << numOfTooEarlyHO + numOfTooLateHO;
   std::cout << "\n Too Early: " << numOfTooEarlyHO;
   std::cout << "\n Too Late: " << numOfTooLateHO;
-  std::cout << "\nHPI: " << (double)(numOfTooLateHO + numOfTooEarlyHO)/(double)(numOfHAndoverFail+numOfHAndoverSucceess) << std::endl;
+  std::cout << "\nHPI: " << calculateHPI().HPI << std::endl;
   std::cout << "------------------------------------------------"<< std::endl;
   std::cout << "------------------------------------------------"<< std::endl;
 
