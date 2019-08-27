@@ -20,7 +20,7 @@ double HPI = 0;
 ns3::songMoonAlgorithm::RLFStats calculateHPI(){
   return {
       numOfRLF,
-      (double)(numOfRLF)/(double)(numOfHAndoverInit?numOfHAndoverInit:0.0000001),
+      (double)(numOfTooEarlyHO + numOfTooLateHO - numOfHAndoverFail + numOfHAndoverSucceess - numOfHAndoverInit)/(double)(numOfHAndoverInit?numOfHAndoverInit:0.0000001),
       (double)numOfTooLateHO/(double)(numOfHAndoverInit?numOfHAndoverInit:0.0000001),
       (double)numOfTooEarlyHO/(double)(numOfHAndoverInit?numOfHAndoverInit:0.0000001)
       };
@@ -194,7 +194,7 @@ NotifyHandoverEndOkEnb (std::string context,
   //           << " RNTI " << rnti
   //           << std::endl;
   numOfHAndoverSucceess+=1;
-  ns3::songMoonAlgorithm::updateParameters(calculateHPI());
+  ns3::songMoonAlgorithm::updateParameters(calculateHPI(), 0);
 }
 
 void
@@ -221,8 +221,7 @@ NotifyRadioLinkFailureUe (uint64_t imsi, uint16_t rnti, uint16_t cellId)
     }
   }
   numOfRLF+=1;
-  ns3::songMoonAlgorithm::updateParameters(calculateHPI());
-  ns3::songMoonAlgorithm::updateMeasConf = true;
+  ns3::songMoonAlgorithm::updateParameters(calculateHPI(), cellId);
 }
 
 void
@@ -235,8 +234,7 @@ HandoverFailureEnb (uint64_t imsi, uint16_t rnti, uint16_t cellId, std::string c
   numOfTooLateHO+=1;//
   ongoingHandovers.erase(imsi);
 
-  ns3::songMoonAlgorithm::updateParameters(calculateHPI());
-  ns3::songMoonAlgorithm::updateMeasConf = true;
+  ns3::songMoonAlgorithm::updateParameters(calculateHPI(), cellId);
 }
 
 void
@@ -277,7 +275,7 @@ int main(int argc, char *argv[]) {
 	int numberOfUes = 126;
 	int distance = 600; //m  sqrt(3) * radius/2
 	Enbs::Position_Types type = Enbs::HEX_MATRIX;
-	double simulationTime = 90;
+	double simulationTime = 10;
 	double eNbTxPower = 43; //dbm
 	int xCenter = 800;
 	int yCenter = 800;
@@ -297,6 +295,7 @@ int main(int argc, char *argv[]) {
   // Config::SetDefault ("ns3::LteEnbRrc::HandoverJoiningTimeoutDuration", TimeValue (MilliSeconds (500)));
   Config::SetDefault ("ns3::songMoonAlgorithm::NumberOfNeighbours", UintegerValue(numberOfEnbs));
   Config::SetDefault ("ns3::songMoonAlgorithm::ThresholdChange", UintegerValue(3));
+  Config::SetDefault ("ns3::songMoonAlgorithm::TxPower", DoubleValue(eNbTxPower));
 
 	//setup the network
 	LteNetworkConfiguration lteNetwork;
