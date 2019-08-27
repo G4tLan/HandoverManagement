@@ -58,7 +58,7 @@ private:
 };
 
 LteNetworkConfiguration::LteNetworkConfiguration() {
-	Config::SetDefault ("ns3::UdpClient::Interval", TimeValue (MilliSeconds (1)));
+	//Config::SetDefault ("ns3::UdpClient::Interval", TimeValue (MilliSeconds (1)));
 	Config::SetDefault("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue(320) );
 	//must follow this order
 	setUpEpc();
