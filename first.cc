@@ -19,6 +19,7 @@ double HPI = 0;
 
 ns3::songMoonAlgorithm::RLFStats calculateHPI(){
   return {
+      numOfRLF,
       (double)(numOfRLF)/(double)(numOfHAndoverInit?numOfHAndoverInit:0.0000001),
       (double)numOfTooLateHO/(double)(numOfHAndoverInit?numOfHAndoverInit:0.0000001),
       (double)numOfTooEarlyHO/(double)(numOfHAndoverInit?numOfHAndoverInit:0.0000001)
