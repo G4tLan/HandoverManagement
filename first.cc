@@ -317,7 +317,7 @@ int main(int argc, char *argv[]) {
 	lteNetwork.installIpStackUe(ueContainer.getUes(), &ueLteDevs);
 	lteNetwork.connectUeToNearestEnb(&ueLteDevs, &enbLteDevs);
 	lteNetwork.startApps(ueContainer.getUes(), &ueLteDevs);
-	lteNetwork.setupTraces();
+//	lteNetwork.setupTraces();
 	//ueContainer.updateUePositionHistory();
 
 	enbContainer.populateNeighbours();
